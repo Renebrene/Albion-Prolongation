@@ -7,7 +7,7 @@
  *   - навигация: сеть, при недоступности — закэшированный index.html.
  */
 
-const CACHE_NAME = 'geophoto-static-v4';
+const CACHE_NAME = 'geophoto-static-v5';
 
 const STATIC_ASSETS = [
     './',
@@ -22,7 +22,9 @@ const STATIC_ASSETS = [
     './manifest.json',
     './lib/piexif.js',
     './icons/icon-192.png',
-    './icons/icon-512.png'
+    './icons/icon-512.png',
+    './icons/icon-maskable-512.png',
+    './icons/apple-touch-icon.png'
 ];
 
 self.addEventListener('install', (event) => {
