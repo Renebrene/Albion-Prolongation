@@ -289,17 +289,16 @@ body {
 /* --------------------------------------------------------------- камера */
 
 .camera-area {
-    flex: 1;
+    flex: 0 0 auto;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: 14px;
-    margin: 12px;
-    padding: 28px 16px;
-    min-height: 240px;
+    gap: 8px;
+    margin: 10px 12px 0;
+    padding: 14px 16px;
     border: 2px dashed rgba(33, 150, 243, 0.35);
-    border-radius: 22px;
+    border-radius: 18px;
     background: linear-gradient(160deg, #e8f4ff 0%, #d6ebff 60%, #cbe4ff 100%);
     color: var(--primary-dark);
     cursor: pointer;
@@ -316,33 +315,46 @@ body {
 }
 
 .camera-icon {
-    width: clamp(80px, 30vw, 120px);
-    height: clamp(80px, 30vw, 120px);
+    width: clamp(48px, 15vw, 64px);
+    height: clamp(48px, 15vw, 64px);
     fill: var(--primary);
 }
 
 .camera-hint {
-    font-size: 0.95rem;
+    font-size: 0.85rem;
     font-weight: 500;
     color: var(--primary-dark);
+}
+
+/* Если галерея свёрнута — камера занимает освободившееся место */
+.screen.gallery-collapsed .camera-area {
+    flex: 1 1 auto;
 }
 
 /* -------------------------------------------------------------- галерея */
 
 .gallery-section {
-    margin-top: auto;
-    padding: 8px 0 12px;
+    flex: 1 1 auto;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    margin-top: 10px;
     background: var(--surface);
     border-top-left-radius: 20px;
     border-top-right-radius: 20px;
     box-shadow: 0 -2px 12px rgba(23, 43, 77, 0.06);
+    overflow: hidden;
+}
+
+.gallery-section.collapsed {
+    flex: 0 0 auto;
 }
 
 .section-head {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 4px 16px 8px;
+    padding: 10px 16px 8px;
 }
 
 .section-head h2 {
@@ -354,8 +366,13 @@ body {
 }
 
 .gallery-wrap {
-    padding: 0 12px 4px;
-    overflow: hidden;
+    flex: 1;
+    min-height: 0;
+    padding: 0 12px 12px;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: thin;
 }
 
 .gallery-wrap.collapsed {
@@ -363,12 +380,10 @@ body {
 }
 
 .gallery {
-    display: flex;
-    gap: 10px;
-    overflow-x: auto;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(92px, 1fr));
+    gap: 8px;
     padding: 2px 2px 8px;
-    scroll-snap-type: x proximity;
-    scrollbar-width: thin;
 }
 
 .gallery:empty {
@@ -377,16 +392,15 @@ body {
 
 .gallery-item {
     position: relative;
-    flex: 0 0 auto;
-    width: 100px;
-    height: 100px;
+    width: 100%;
+    height: auto;
+    aspect-ratio: 1 / 1;
     padding: 0;
     border: 2px solid transparent;
     border-radius: 14px;
     overflow: hidden;
     background: var(--surface-alt);
     cursor: pointer;
-    scroll-snap-align: start;
     -webkit-tap-highlight-color: transparent;
 }
 

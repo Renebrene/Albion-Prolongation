@@ -85,7 +85,8 @@ function cacheElements() {
     const ids = [
         'screen-main', 'btn-send-selected', 'queue-badge', 'btn-settings',
         'selected-block', 'selected-img', 'selected-name', 'selected-status', 'btn-clear-selection',
-        'camera-area', 'camera-input', 'btn-gallery-toggle', 'gallery-wrap', 'gallery', 'gallery-empty',
+        'camera-area', 'camera-input', 'btn-gallery-toggle', 'gallery-section',
+        'gallery-wrap', 'gallery', 'gallery-empty',
         'screen-photo', 'btn-photo-back', 'btn-photo-delete', 'photo-preview', 'photo-gps',
         'photo-city', 'photo-address', 'city-prev', 'city-next',
         'address-prev', 'address-next', 'photo-name',
@@ -285,6 +286,8 @@ function updateQueueBadge() {
 function toggleGallery() {
     state.galleryCollapsed = !state.galleryCollapsed;
     els.galleryWrap.classList.toggle('collapsed', state.galleryCollapsed);
+    els.gallerySection.classList.toggle('collapsed', state.galleryCollapsed);
+    els.screenMain.classList.toggle('gallery-collapsed', state.galleryCollapsed);
     els.btnGalleryToggle.textContent = state.galleryCollapsed ? 'Развернуть' : 'Свернуть';
 }
 

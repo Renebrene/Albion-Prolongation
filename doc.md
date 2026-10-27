@@ -764,14 +764,18 @@ computeRevision учитывает name, city, address, side, lat, lon.
   настройках: «Синхронизировать базу» (btn-sync-now).
 - Кнопка «Отправить» в шапке увеличена: pill-кнопка .send-btn с текстом
   и иконкой, min-height 46px; на узких экранах уменьшаются отступы.
+- Блок камеры компактный: .camera-area без растяжения, иконка 48-64 px.
+- Галерея — сетка (grid, minmax(92px, 1fr)) на всю оставшуюся высоту,
+  вертикальная прокрутка. При сворачивании .gallery-section.collapsed
+  камера растягивается (.screen.gallery-collapsed .camera-area).
 - Очередь и настройки остались в шапке.
 
 20.2. ОБНОВЛЕНИЕ PWA
-- Service Worker: CACHE_NAME = geophoto-static-v9.
+- Service Worker: CACHE_NAME = geophoto-static-v10.
 - Регистрация: { updateViaCache: 'none' } + registration.update() при загрузке.
 - При активации нового SW (skipWaiting + clients.claim) срабатывает
   controllerchange -> однократный window.location.reload().
-- Настройки -> «О приложении»: версия (Logger.APP_VERSION = 1.2.4) и кнопка
+- Настройки -> «О приложении»: версия (Logger.APP_VERSION = 1.2.5) и кнопка
   «Проверить обновление» (registration.update()).
 - Ручной вариант: полностью закрыть и открыть PWA; на iOS — через Safari.
 - Данные (токен, IndexedDB, очередь) при обновлении не удаляются.
