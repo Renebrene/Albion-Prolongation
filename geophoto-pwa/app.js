@@ -89,6 +89,7 @@ function cacheElements() {
         'selected-block', 'selected-img', 'selected-name', 'selected-status', 'btn-clear-selection',
         'camera-area', 'camera-input', 'camera-idle', 'camera-video', 'camera-controls',
         'camera-switch', 'camera-system', 'camera-shutter', 'camera-error',
+        'camera-gallery', 'camera-gallery-preview', 'gallery-input',
         'btn-gallery-toggle', 'gallery-section',
         'gallery-wrap', 'gallery', 'gallery-empty',
         'screen-photo', 'btn-photo-back', 'btn-photo-delete', 'photo-preview', 'photo-gps',
@@ -135,6 +136,15 @@ function bindEvents() {
         switchCamera();
     });
     els.cameraInput.addEventListener('change', onCameraInputChange);
+    els.galleryInput.addEventListener('change', onGalleryInputChange);
+    els.cameraGallery.addEventListener('click', (event) => {
+        event.stopPropagation();
+        openGalleryPicker();
+    });
+    els.cameraGalleryPreview.addEventListener('click', (event) => {
+        event.stopPropagation();
+        openGalleryPicker();
+    });
     els.btnSettings.addEventListener('click', () => openSettings());
     els.btnSendSelected.addEventListener('click', () => sendSelected());
     els.btnClearSelection.addEventListener('click', clearSelection);
@@ -355,6 +365,39 @@ async function handleNewPhoto(file) {
         : requestedLevel;
 
     await saveCapturedPhoto(dataUrl, gps, compressionLevel);
+}
+
+// ----------------------------------------------------------- галерея телефона
+
+function openGalleryPicker() {
+    stopCameraPreview();
+    els.galleryInput.value = '';
+    els.galleryInput.click();
+}
+
+async function onGalleryInputChange(event) {
+    const files = Array.from(event.target.files || []);
+    event.target.value = '';
+    if (files.length === 0) return;
+
+    stopCameraPreview();
+
+    let processed = 0;
+    for (const file of files) {
+        try {
+            await handleNewPhoto(file);
+            processed += 1;
+            if (files.length > 1) showToast(`Обработано ${processed} из ${files.length}`);
+        } catch (err) {
+            console.error('Ошибка обработки файла из галереи', err);
+            await state.logger.error('Ошибка обработки файла из галереи', {
+                message: err.message,
+                name: file.name
+            });
+        }
+    }
+
+    if (files.length > 1) showToast(`Добавлено фото: ${processed}`);
 }
 
 // ------------------------------------------------------ live-предпросмотр

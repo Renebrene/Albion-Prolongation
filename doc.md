@@ -787,13 +787,22 @@ computeRevision учитывает name, city, address, side, lat, lon.
   GPS/имя:       47.2566,39.7688 -> «1-й Конной Армии ул. 32, A»
   поток после снимка остановлен.
 
+21.5. ГАЛЕРЕЯ ТЕЛЕФОНА И ПРОКРУТКА (дополнение от 28.10.2026)
+- Кнопка «Из галереи» (idle и панель предпросмотра) открывает input без
+  capture, multiple: можно выбрать несколько фото. Каждое обрабатывается через
+  handleNewPhoto (EXIF -> сжатие -> миниатюра -> IndexedDB).
+- Скролл перенесён внутрь экрана: .screen height 100dvh + overflow hidden,
+  .settings-body и .photo-body имеют свою прокрутку, .screen-footer статичен.
+  Шапка остаётся сверху, контент под неё не заезжает.
+- Версия 1.4.0, SW geophoto-static-v12.
+
 21.4. ФАЙЛЫ
 - index.html: video, shutter, switch, system-camera, error.
 - styles.css: .camera-area.previewing, .camera-video, .camera-shutter, .camera-chip.
 - app.js: startCameraPreview, stopCameraPreview, switchCamera, captureFromPreview,
   getQuickPosition, saveCapturedPhoto; thumbUrl в галерее и выбранном фото.
 - compression.js: canvasToJpeg, createThumbnail, attachGpsExif, _loadImage.
-- Версия 1.3.0, SW geophoto-static-v11.
+- Версия 1.4.0, SW geophoto-static-v12.
 
 ================================================================================
 20.1. ГЛАВНЫЙ ЭКРАН
@@ -808,11 +817,11 @@ computeRevision учитывает name, city, address, side, lat, lon.
 - Очередь и настройки остались в шапке.
 
 20.2. ОБНОВЛЕНИЕ PWA
-- Service Worker: CACHE_NAME = geophoto-static-v11.
+- Service Worker: CACHE_NAME = geophoto-static-v12.
 - Регистрация: { updateViaCache: 'none' } + registration.update() при загрузке.
 - При активации нового SW (skipWaiting + clients.claim) срабатывает
   controllerchange -> однократный window.location.reload().
-- Настройки -> «О приложении»: версия (Logger.APP_VERSION = 1.3.0) и кнопка
+- Настройки -> «О приложении»: версия (Logger.APP_VERSION = 1.4.0) и кнопка
   «Проверить обновление» (registration.update()).
 - Ручной вариант: полностью закрыть и открыть PWA; на iOS — через Safari.
 - Данные (токен, IndexedDB, очередь) при обновлении не удаляются.

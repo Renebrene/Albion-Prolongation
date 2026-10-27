@@ -44,12 +44,14 @@
                     <path d="M9 3 7.2 5H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-3.2L15 3H9Zm3 5.5A5.5 5.5 0 1 1 6.5 14 5.5 5.5 0 0 1 12 8.5Zm0 2A3.5 3.5 0 1 0 15.5 14 3.5 3.5 0 0 0 12 10.5Z"/>
                 </svg>
                 <span class="camera-hint">Нажмите, чтобы сделать фото</span>
+                <button id="camera-gallery" class="camera-gallery-btn" type="button">Из галереи</button>
             </div>
 
             <video id="camera-video" class="camera-video hidden" autoplay playsinline muted></video>
 
             <div id="camera-controls" class="camera-controls hidden">
                 <button id="camera-switch" class="camera-chip" type="button" aria-label="Сменить камеру">⇄</button>
+                <button id="camera-gallery-preview" class="camera-chip" type="button">Галерея</button>
                 <button id="camera-system" class="camera-chip" type="button">Системная камера</button>
             </div>
 
@@ -58,6 +60,7 @@
         </div>
 
         <input id="camera-input" type="file" accept="image/*" capture="environment" hidden>
+        <input id="gallery-input" type="file" accept="image/*" multiple hidden>
 
         <section id="gallery-section" class="gallery-section">
             <div class="section-head">

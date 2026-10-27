@@ -54,7 +54,10 @@ body {
 .screen {
     display: none;
     flex-direction: column;
-    min-height: 100dvh;
+    height: 100vh;
+    height: 100dvh;
+    max-height: 100dvh;
+    overflow: hidden;
     padding-bottom: env(safe-area-inset-bottom);
 }
 
@@ -414,6 +417,22 @@ body {
     color: var(--primary-dark);
 }
 
+.camera-gallery-btn {
+    padding: 8px 14px;
+    border: 1px solid rgba(33, 150, 243, 0.5);
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.75);
+    color: var(--primary-dark);
+    font-size: 0.85rem;
+    font-family: inherit;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.camera-gallery-btn:active {
+    transform: scale(0.96);
+}
+
 /* Если галерея свёрнута — камера занимает освободившееся место */
 .screen.gallery-collapsed .camera-area {
     flex: 1 1 auto;
@@ -536,11 +555,15 @@ body {
 /* ------------------------------------------------------------ экран фото */
 
 .photo-body {
-    flex: 1;
+    flex: 1 1 auto;
+    min-height: 0;
     display: flex;
     flex-direction: column;
     gap: 14px;
     padding: 14px;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
 }
 
 .photo-frame {
@@ -577,8 +600,8 @@ body {
 }
 
 .screen-footer {
-    position: sticky;
-    bottom: 0;
+    position: static;
+    flex: 0 0 auto;
     padding: 12px 14px calc(12px + env(safe-area-inset-bottom));
     background: var(--surface);
     box-shadow: 0 -2px 12px rgba(23, 43, 77, 0.06);
@@ -591,11 +614,15 @@ body {
 /* --------------------------------------------------------------- настройки */
 
 .settings-body {
-    flex: 1;
+    flex: 1 1 auto;
+    min-height: 0;
     display: flex;
     flex-direction: column;
     gap: 12px;
     padding: 14px;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
 }
 
 .card {
