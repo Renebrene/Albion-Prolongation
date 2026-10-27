@@ -35,6 +35,10 @@ document.addEventListener('DOMContentLoaded', () => {
 async function init() {
     cacheElements();
 
+    // Регистрируем SW до любых await: иначе событие load может пройти раньше,
+    // чем мы успеем повесить обработчик, и SW останется незарегистрированным.
+    registerServiceWorker();
+
     state.db = new GeoPhotoDB();
     await state.db.open();
     state.logger = new Logger(state.db);
@@ -50,8 +54,6 @@ async function init() {
         appVersion: Logger.APP_VERSION,
         paired: state.pairing.isPaired()
     });
-
-    registerServiceWorker();
 
     // Автосинхронизация и отправка очереди не должны блокировать первый рендер.
     setTimeout(async () => {
@@ -926,32 +928,46 @@ function showToast(message) {
     }, 3200);
 }
 
+function setSwStatus(text) {
+    if (els.updateStatus) els.updateStatus.textContent = text;
+}
+
 async function checkForUpdate() {
     if (!('serviceWorker' in navigator)) {
-        showToast('Обновления недоступны в этом браузере');
+        setSwStatus('Service Worker не поддерживается этим браузером');
+        return;
+    }
+    if (!window.isSecureContext) {
+        setSwStatus('Service Worker требует HTTPS. Откройте приложение по https://');
         return;
     }
 
     els.btnCheckUpdate.disabled = true;
     els.updateStatus.textContent = 'Проверяем обновление…';
     try {
-        const registration = await navigator.serviceWorker.getRegistration();
+        let registration = await navigator.serviceWorker.getRegistration();
         if (!registration) {
-            els.updateStatus.textContent = 'Service Worker ещё не зарегистрирован. Перезапустите приложение.';
-            return;
+            els.updateStatus.textContent = 'Регистрируем Service Worker…';
+            registration = await navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' });
         }
         await registration.update();
-        els.updateStatus.textContent = 'Проверка выполнена. Если вышло обновление, приложение перезапустится.';
+        els.updateStatus.textContent = 'Service Worker активен. Обновление проверено.';
     } catch (err) {
-        els.updateStatus.textContent = 'Не удалось проверить обновление. Проверьте интернет.';
+        els.updateStatus.textContent = 'Ошибка Service Worker: ' + (err.message || err.name);
     } finally {
         els.btnCheckUpdate.disabled = false;
     }
 }
 
 function registerServiceWorker() {
-    if (!('serviceWorker' in navigator)) return;
-    if (!/^https?:$/.test(window.location.protocol)) return;
+    if (!('serviceWorker' in navigator)) {
+        setSwStatus('Service Worker не поддерживается этим браузером');
+        return;
+    }
+    if (!window.isSecureContext) {
+        setSwStatus('Service Worker требует HTTPS');
+        return;
+    }
 
     // Новый Service Worker активируется (skipWaiting в sw.js) и перезагружает
     // страницу один раз — так обновление применяется без ручной очистки кэша.
@@ -962,9 +978,10 @@ function registerServiceWorker() {
         window.location.reload();
     });
 
-    window.addEventListener('load', () => {
+    const startRegistration = () => {
         navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' })
             .then((registration) => {
+                setSwStatus('Service Worker: активен');
                 registration.update().catch(() => {});
                 registration.addEventListener('updatefound', () => {
                     const worker = registration.installing;
@@ -977,7 +994,15 @@ function registerServiceWorker() {
                 });
             })
             .catch((err) => {
-                console.warn('Service Worker не зарегистрирован', err);
+                console.error('Service Worker не зарегистрирован', err);
+                setSwStatus('Service Worker: ошибка — ' + (err.message || err.name));
             });
-    });
+    };
+
+    // init() асинхронный: к моменту вызова load мог уже пройти.
+    if (document.readyState === 'complete') {
+        startRegistration();
+    } else {
+        window.addEventListener('load', startRegistration, { once: true });
+    }
 }

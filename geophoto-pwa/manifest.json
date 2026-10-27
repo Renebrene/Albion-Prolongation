@@ -1,6 +1,6 @@
 {
-    "name": "GeoPhoto — фото с GPS-адресом",
-    "short_name": "GeoPhoto",
+    "name": "Пролонгация — фото с GPS-адресом",
+    "short_name": "Пролонгация",
     "description": "Съёмка фото, определение адреса по GPS из EXIF и отправка на сервер",
     "lang": "ru",
     "dir": "ltr",
