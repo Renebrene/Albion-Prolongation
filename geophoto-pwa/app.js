@@ -19,6 +19,7 @@ const state = {
 };
 
 const els = {};
+const combos = {};
 const STATUS_LABELS = {
     pending: 'В очереди',
     sent: 'Отправлено',
@@ -38,6 +39,7 @@ async function init() {
     // Регистрируем SW до любых await: иначе событие load может пройти раньше,
     // чем мы успеем повесить обработчик, и SW останется незарегистрированным.
     registerServiceWorker();
+    setupCombos();
 
     state.db = new GeoPhotoDB();
     await state.db.open();
@@ -82,7 +84,7 @@ function cacheElements() {
         'selected-block', 'selected-img', 'selected-name', 'selected-status', 'btn-clear-selection',
         'camera-area', 'camera-input', 'btn-gallery-toggle', 'gallery-wrap', 'gallery', 'gallery-empty',
         'screen-photo', 'btn-photo-back', 'btn-photo-delete', 'photo-preview', 'photo-gps',
-        'photo-city', 'photo-address', 'photo-name',
+        'photo-city', 'photo-address', 'city-dropdown', 'address-dropdown', 'photo-name',
         'photo-status', 'photo-level', 'btn-photo-send',
         'screen-settings', 'btn-settings-back', 'server-url', 'token-input', 'device-name',
         'btn-pair', 'btn-unpair', 'pairing-status', 'compression-level', 'compression-info',
@@ -860,6 +862,208 @@ async function findLocationByCityAddress(city, addressSide) {
     // 3. Наименование из базы.
     return locations.find((location) =>
         sameCity(location) && normalizeKey(location.name) === addressKey) || null;
+}
+
+// ------------------------------------------------ выпадающие списки
+
+const COMBO_LIMIT = 500;
+
+function setupCombos() {
+    setupCombo('city', els.photoCity, els.cityDropdown, getCityValues);
+    setupCombo('address', els.photoAddress, els.addressDropdown,
+        () => getAddressValues(els.photoCity.value.trim()));
+
+    document.addEventListener('click', (event) => {
+        if (!event.target.closest('.combo')) closeAllCombos();
+    });
+}
+
+function setupCombo(kind, input, panel, getValues) {
+    if (!input || !panel) return;
+
+    const combo = { input, panel, getValues, active: -1, values: [] };
+    combos[kind] = combo;
+
+    input.addEventListener('focus', () => openCombo(kind, { showAll: true }));
+    input.addEventListener('input', () => openCombo(kind, { query: input.value }));
+    input.addEventListener('keydown', (event) => handleComboKey(kind, event));
+    input.addEventListener('blur', () => {
+        setTimeout(() => {
+            if (document.activeElement !== input) closeCombo(kind);
+        }, 120);
+    });
+
+    panel.addEventListener('pointerdown', (event) => {
+        const option = event.target.closest('.combo-option');
+        if (!option) return;
+        event.preventDefault();
+        selectCombo(kind, option.dataset.value);
+    });
+}
+
+function getCityValues() {
+    const locations = state.locationsCache || [];
+    return [...new Set(
+        locations.map((location) => String(location.city || '').trim()).filter(Boolean)
+    )].sort((a, b) => a.localeCompare(b, 'ru'));
+}
+
+function getAddressValues(city) {
+    const locations = state.locationsCache || [];
+    const cityKey = normalizeKey(city);
+    const filtered = cityKey
+        ? locations.filter((location) => normalizeKey(location.city) === cityKey)
+        : [];
+    const pool = filtered.length > 0 ? filtered : locations;
+
+    return [...new Set(pool.map(formatAddressSide).filter(Boolean))]
+        .sort((a, b) => a.localeCompare(b, 'ru'));
+}
+
+function openCombo(kind, options = {}) {
+    const combo = combos[kind];
+    if (!combo) return;
+
+    closeAllCombos(kind);
+
+    let values = combo.getValues() || [];
+    const query = options.showAll
+        ? ''
+        : normalizeKey(options.query !== undefined ? options.query : combo.input.value);
+
+    if (query) {
+        values = values.filter((value) => normalizeKey(value).includes(query));
+    }
+
+    const total = values.length;
+    const shown = values.slice(0, COMBO_LIMIT);
+    combo.values = shown;
+    combo.active = -1;
+
+    const panel = combo.panel;
+    panel.textContent = '';
+
+    if (shown.length === 0) {
+        const empty = document.createElement('div');
+        empty.className = 'combo-empty';
+        empty.textContent = query ? 'Ничего не найдено' : 'База адресов пока пуста';
+        panel.appendChild(empty);
+    } else {
+        const fragment = document.createDocumentFragment();
+        for (const value of shown) {
+            const item = document.createElement('div');
+            item.className = 'combo-option';
+            item.dataset.value = value;
+            item.textContent = value;
+            item.title = value;
+            item.setAttribute('role', 'option');
+            fragment.appendChild(item);
+        }
+        panel.appendChild(fragment);
+
+        if (total > shown.length) {
+            const note = document.createElement('div');
+            note.className = 'combo-note';
+            note.textContent = `Показано ${shown.length} из ${total}. Уточните запрос.`;
+            panel.appendChild(note);
+        }
+
+        const current = normalizeKey(combo.input.value);
+        const exact = shown.findIndex((value) => normalizeKey(value) === current);
+        if (exact >= 0) setActiveCombo(kind, exact, true);
+    }
+
+    panel.classList.remove('hidden');
+    combo.input.setAttribute('aria-expanded', 'true');
+}
+
+function closeCombo(kind) {
+    const combo = combos[kind];
+    if (!combo) return;
+    combo.panel.classList.add('hidden');
+    combo.input.setAttribute('aria-expanded', 'false');
+    combo.active = -1;
+}
+
+function closeAllCombos(exceptKind) {
+    for (const kind of Object.keys(combos)) {
+        if (kind !== exceptKind) closeCombo(kind);
+    }
+}
+
+function setActiveCombo(kind, index, scroll) {
+    const combo = combos[kind];
+    if (!combo) return;
+
+    const options = combo.panel.querySelectorAll('.combo-option');
+    if (options.length === 0) return;
+
+    combo.active = (index + options.length) % options.length;
+    options.forEach((option, position) => {
+        option.classList.toggle('active', position === combo.active);
+    });
+
+    if (scroll) {
+        options[combo.active].scrollIntoView({ block: 'nearest' });
+    }
+}
+
+function handleComboKey(kind, event) {
+    const combo = combos[kind];
+    if (!combo) return;
+
+    const isOpen = !combo.panel.classList.contains('hidden');
+
+    if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+        event.preventDefault();
+        if (!isOpen) openCombo(kind, { showAll: true });
+
+        const options = combo.panel.querySelectorAll('.combo-option');
+        if (options.length === 0) return;
+
+        const delta = event.key === 'ArrowDown' ? 1 : -1;
+        const next = combo.active < 0
+            ? (delta > 0 ? 0 : options.length - 1)
+            : combo.active + delta;
+        setActiveCombo(kind, next, true);
+        return;
+    }
+
+    if (event.key === 'Enter') {
+        if (isOpen && combo.active >= 0) {
+            const options = combo.panel.querySelectorAll('.combo-option');
+            const active = options[combo.active];
+            if (active) {
+                event.preventDefault();
+                selectCombo(kind, active.dataset.value);
+            }
+        }
+        return;
+    }
+
+    if (event.key === 'Escape' || event.key === 'Tab') {
+        closeCombo(kind);
+    }
+}
+
+function selectCombo(kind, value) {
+    const combo = combos[kind];
+    if (!combo) return;
+
+    combo.input.value = value;
+    closeCombo(kind);
+
+    if (kind === 'city') {
+        const addresses = getAddressValues(value);
+        const current = els.photoAddress.value.trim();
+        const stillValid = addresses.some((address) =>
+            normalizeKey(address) === normalizeKey(current));
+        if (current && !stillValid) els.photoAddress.value = '';
+    }
+
+    saveCurrentPhotoAddress()
+        .then(() => refreshGallery())
+        .catch((err) => console.warn('Не удалось сохранить адрес', err));
 }
 
 function applyStatus(element, status) {

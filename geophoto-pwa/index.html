@@ -75,16 +75,22 @@
 
             <p id="photo-name" class="muted">Наименование: —</p>
 
-            <label class="field" for="photo-city">
+            <label class="field combo" for="photo-city">
                 <span>Город</span>
                 <input id="photo-city" type="text" autocomplete="off"
-                       placeholder="Введите город">
+                       placeholder="Выберите город"
+                       role="combobox" aria-autocomplete="list"
+                       aria-expanded="false" aria-controls="city-dropdown">
+                <div id="city-dropdown" class="combo-dropdown hidden" role="listbox"></div>
             </label>
 
-            <label class="field" for="photo-address">
+            <label class="field combo" for="photo-address">
                 <span>Адрес и сторона</span>
                 <input id="photo-address" type="text" autocomplete="off"
-                       placeholder="Введите адрес и сторону">
+                       placeholder="Выберите адрес и сторону"
+                       role="combobox" aria-autocomplete="list"
+                       aria-expanded="false" aria-controls="address-dropdown">
+                <div id="address-dropdown" class="combo-dropdown hidden" role="listbox"></div>
             </label>
 
             <div class="photo-meta">
