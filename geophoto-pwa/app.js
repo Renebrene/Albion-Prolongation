@@ -48,7 +48,7 @@ async function init() {
     if (els.appVersion) els.appVersion.textContent = Logger.APP_VERSION;
     await refreshGallery();
     await renderSettings();
-    await renderLocationsDatalist();
+    await refreshLocationsCache();
 
     await state.logger.info('Приложение запущено', {
         appVersion: Logger.APP_VERSION,
@@ -64,7 +64,7 @@ async function init() {
             const result = await state.pairing.autoSyncIfDue();
             if (result) {
                 await renderSettings();
-                await renderLocationsDatalist();
+                await refreshLocationsCache();
                 if (result.locationsChanged) {
                     showToast(`База обновлена: ${result.locationsUpdated} локаций`);
                 }
@@ -82,7 +82,7 @@ function cacheElements() {
         'selected-block', 'selected-img', 'selected-name', 'selected-status', 'btn-clear-selection',
         'camera-area', 'camera-input', 'btn-gallery-toggle', 'gallery-wrap', 'gallery', 'gallery-empty',
         'screen-photo', 'btn-photo-back', 'btn-photo-delete', 'photo-preview', 'photo-gps',
-        'photo-city', 'photo-address', 'cities-list', 'addresses-list', 'photo-name',
+        'photo-city', 'photo-address', 'photo-name',
         'photo-status', 'photo-level', 'btn-photo-send',
         'screen-settings', 'btn-settings-back', 'server-url', 'token-input', 'device-name',
         'btn-pair', 'btn-unpair', 'pairing-status', 'compression-level', 'compression-info',
@@ -112,9 +112,6 @@ function bindEvents() {
     els.btnPhotoBack.addEventListener('click', closePhotoScreen);
     els.btnPhotoDelete.addEventListener('click', deleteCurrentPhoto);
     els.btnPhotoSend.addEventListener('click', sendCurrentPhoto);
-    els.photoCity.addEventListener('input', () => {
-        renderAddressOptions(els.photoCity.value.trim());
-    });
     els.photoAddress.addEventListener('change', () => {
         saveCurrentPhotoAddress().then(() => refreshGallery()).catch((err) => {
             console.warn('Не удалось сохранить адрес', err);
@@ -164,7 +161,7 @@ function showScreen(screenId) {
 
 function openSettings() {
     renderSettings()
-        .then(renderLocationsDatalist)
+        .then(refreshLocationsCache)
         .catch((err) => console.warn('Ошибка настроек', err));
     showScreen('screen-settings');
 }
@@ -413,7 +410,19 @@ async function uploadOne(photo, options = {}) {
     }
 
     if (!navigator.onLine) {
-        if (!silent) showToast('Нет сети — фото останется в очереди');
+        // Без сети адрес уже присвоен локально — фото сразу становится в очередь.
+        await state.db.updatePhoto(photo.id, {
+            status: 'pending',
+            queuedAt: Date.now()
+        });
+        await state.logger.info('Фото поставлено в очередь (нет сети)', {
+            photoId: photo.id,
+            name: photo.name || '',
+            city: photo.city || '',
+            address: photo.address || ''
+        });
+        if (!silent) showToast('Нет сети — фото добавлено в очередь');
+        await refreshGallery();
         return false;
     }
 
@@ -497,9 +506,8 @@ async function openPhotoScreen(photoId) {
     els.photoName.textContent = `Наименование: ${photo.name || '—'}`;
 
     if (state.locationsCache.length === 0) {
-        state.locationsCache = await state.db.getAllLocations();
+        await refreshLocationsCache();
     }
-    renderAddressOptions(photo.city || '');
 
     els.photoLevel.textContent = PhotoCompressor.getLevelConfig(photo.compressionLevel).label;
     applyStatus(els.photoStatus, photo.status);
@@ -525,7 +533,7 @@ async function saveCurrentPhotoAddress() {
     const address = els.photoAddress.value.trim();
 
     // Имя берём из базы — колонка «Наименование» найденной локации.
-    const match = findLocationByCityAddress(city, address);
+    const match = await findLocationByCityAddress(city, address);
     const name = match ? match.name : '';
 
     const changes = {};
@@ -563,7 +571,8 @@ async function sendCurrentPhoto() {
     const uploaded = await uploadOne(photo);
     await refreshGallery();
 
-    if (uploaded) {
+    if (uploaded || (!navigator.onLine && state.pairing.isPaired())) {
+        // Отправлено или офлайн-очередь — возвращаемся на главный экран.
         state.selectedId = photo.id;
         state.currentPhotoId = null;
         showScreen('screen-main');
@@ -715,7 +724,7 @@ async function syncNow(options = {}) {
                 : 'База актуальна');
         }
         await renderSettings();
-        await renderLocationsDatalist();
+        await refreshLocationsCache();
         return result;
     } catch (err) {
         await state.logger.error('Ошибка синхронизации', { code: err.code, message: err.message });
@@ -729,44 +738,10 @@ async function syncNow(options = {}) {
     }
 }
 
-function fillDatalist(node, values) {
-    if (!node) return;
-    node.textContent = '';
-    for (const value of values) {
-        const option = document.createElement('option');
-        option.value = value;
-        node.appendChild(option);
-    }
-}
-
-/** «Город» — уникальные значения из SQL-колонки city. */
-async function renderLocationsDatalist() {
-    const locations = await state.db.getAllLocations();
-    state.locationsCache = locations;
-
-    const cities = [...new Set(
-        locations.map((location) => String(location.city || '').trim()).filter(Boolean)
-    )].sort((a, b) => a.localeCompare(b, 'ru'));
-
-    fillDatalist(els.citiesList, cities);
-    renderAddressOptions(els.photoCity ? els.photoCity.value.trim() : '');
-}
-
-/** «Адрес и сторона» — уникальные значения, при выбранном городе — только его. */
-function renderAddressOptions(city) {
-    if (!els.addressesList) return;
-
-    const cityKey = normalizeKey(city);
-    const locations = state.locationsCache || [];
-    const filtered = cityKey
-        ? locations.filter((location) => normalizeKey(location.city) === cityKey)
-        : [];
-    const pool = filtered.length > 0 ? filtered : locations;
-
-    const values = [...new Set(pool.map(formatAddressSide).filter(Boolean))]
-        .sort((a, b) => a.localeCompare(b, 'ru'));
-
-    fillDatalist(els.addressesList, values);
+/** Локальная копия базы адресов для офлайн-сопоставления. */
+async function refreshLocationsCache() {
+    state.locationsCache = await state.db.getAllLocations();
+    return state.locationsCache;
 }
 
 // ------------------------------------------------------------------ логи
@@ -856,18 +831,35 @@ function photoLabel(photo) {
     return parts.length ? parts.join(', ') : 'Без адреса';
 }
 
-/** Поиск локации по городу и «Адрес + сторона». */
-function findLocationByCityAddress(city, addressSide) {
+/**
+ * Поиск локации по городу и «Адрес + сторона» — полностью локально,
+ * поэтому работает без интернета.
+ */
+async function findLocationByCityAddress(city, addressSide) {
     const addressKey = normalizeKey(addressSide);
     if (!addressKey) return null;
 
+    if (!state.locationsCache || state.locationsCache.length === 0) {
+        await refreshLocationsCache();
+    }
+
     const cityKey = normalizeKey(city);
     const locations = state.locationsCache || [];
+    const sameCity = (location) => !cityKey || normalizeKey(location.city) === cityKey;
 
-    return locations.find((location) => {
-        if (normalizeKey(formatAddressSide(location)) !== addressKey) return false;
-        return !cityKey || normalizeKey(location.city) === cityKey;
-    }) || null;
+    // 1. Точное «Адрес (сторона)».
+    let found = locations.find((location) =>
+        sameCity(location) && normalizeKey(formatAddressSide(location)) === addressKey);
+    if (found) return found;
+
+    // 2. Адрес без стороны — пользователь мог не вводить сторону.
+    found = locations.find((location) =>
+        sameCity(location) && normalizeKey(location.address) === addressKey);
+    if (found) return found;
+
+    // 3. Наименование из базы.
+    return locations.find((location) =>
+        sameCity(location) && normalizeKey(location.name) === addressKey) || null;
 }
 
 function applyStatus(element, status) {
