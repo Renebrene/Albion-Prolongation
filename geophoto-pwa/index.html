@@ -75,23 +75,25 @@
 
             <p id="photo-name" class="muted">Наименование: —</p>
 
-            <label class="field combo" for="photo-city">
+            <div class="field">
                 <span>Город</span>
-                <input id="photo-city" type="text" autocomplete="off"
-                       placeholder="Выберите город"
-                       role="combobox" aria-autocomplete="list"
-                       aria-expanded="false" aria-controls="city-dropdown">
-                <div id="city-dropdown" class="combo-dropdown hidden" role="listbox"></div>
-            </label>
+                <div class="stepper">
+                    <input id="photo-city" class="step-value" type="text" readonly
+                           placeholder="Не выбрано" aria-readonly="true">
+                    <button id="city-prev" class="step-btn" type="button" aria-label="Предыдущий город">◀</button>
+                    <button id="city-next" class="step-btn" type="button" aria-label="Следующий город">▶</button>
+                </div>
+            </div>
 
-            <label class="field combo" for="photo-address">
+            <div class="field">
                 <span>Адрес и сторона</span>
-                <input id="photo-address" type="text" autocomplete="off"
-                       placeholder="Выберите адрес и сторону"
-                       role="combobox" aria-autocomplete="list"
-                       aria-expanded="false" aria-controls="address-dropdown">
-                <div id="address-dropdown" class="combo-dropdown hidden" role="listbox"></div>
-            </label>
+                <div class="stepper">
+                    <input id="photo-address" class="step-value" type="text" readonly
+                           placeholder="Не выбрано" aria-readonly="true">
+                    <button id="address-prev" class="step-btn" type="button" aria-label="Предыдущий адрес">◀</button>
+                    <button id="address-next" class="step-btn" type="button" aria-label="Следующий адрес">▶</button>
+                </div>
+            </div>
 
             <div class="photo-meta">
                 <span id="photo-status" class="status">В очереди</span>

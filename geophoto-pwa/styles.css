@@ -546,65 +546,65 @@ body {
     color: #9aa8b8;
 }
 
-/* Выпадающие списки города и адреса */
-.field.combo {
-    position: relative;
+/* Выбор города и адреса кнопками ◀ ▶ */
+.stepper {
+    display: flex;
+    align-items: center;
+    gap: 8px;
 }
 
-.combo-dropdown {
-    position: absolute;
-    top: calc(100% + 4px);
-    left: 0;
-    right: 0;
-    z-index: 60;
-    max-height: 240px;
-    overflow-y: auto;
-    overscroll-behavior: contain;
-    -webkit-overflow-scrolling: touch;
-    padding: 4px 0;
-    background: var(--surface);
+.step-value {
+    flex: 1;
+    min-width: 0;
+    min-height: 44px;
+    padding: 10px 12px;
     border: 1px solid var(--border);
     border-radius: var(--radius-sm);
-    box-shadow: 0 8px 24px rgba(23, 43, 77, 0.18);
-    scrollbar-width: thin;
-}
-
-.combo-dropdown::-webkit-scrollbar {
-    width: 6px;
-}
-
-.combo-dropdown::-webkit-scrollbar-thumb {
-    background: var(--border);
-    border-radius: 3px;
-}
-
-.combo-option {
-    padding: 10px 12px;
-    font-size: 0.92rem;
-    line-height: 1.25;
+    background: var(--surface-alt);
     color: var(--text);
+    font-size: 0.95rem;
+    font-family: inherit;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+    cursor: default;
+}
+
+.step-value:focus {
+    outline: none;
+}
+
+.step-value::placeholder {
+    color: #9aa8b8;
+}
+
+.step-btn {
+    flex: 0 0 auto;
+    width: 44px;
+    height: 44px;
+    padding: 0;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    background: var(--surface);
+    color: var(--primary-dark);
+    font-size: 1rem;
+    line-height: 1;
     cursor: pointer;
+    transition: background 0.15s ease, transform 0.1s ease;
     -webkit-tap-highlight-color: transparent;
 }
 
-.combo-option:hover,
-.combo-option.active {
+.step-btn:hover {
     background: var(--primary-light);
-    color: var(--primary-dark);
 }
 
-.combo-empty,
-.combo-note {
-    padding: 10px 12px;
-    font-size: 0.82rem;
-    color: var(--text-muted);
+.step-btn:active {
+    transform: scale(0.94);
 }
 
-.combo-note {
-    border-top: 1px solid var(--border);
+.step-btn:disabled {
+    opacity: 0.4;
+    cursor: default;
 }
 
 .row {
