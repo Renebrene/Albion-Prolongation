@@ -16,6 +16,8 @@ const state = {
     addressValues: [],
     addressIndex: -1,
     addressSaveTimer: null,
+    cameraStream: null,
+    cameraFacing: 'environment',
     selectedId: null,
     currentPhotoId: null,
     galleryCollapsed: false,
@@ -85,7 +87,9 @@ function cacheElements() {
     const ids = [
         'screen-main', 'btn-send-selected', 'queue-badge', 'btn-settings',
         'selected-block', 'selected-img', 'selected-name', 'selected-status', 'btn-clear-selection',
-        'camera-area', 'camera-input', 'btn-gallery-toggle', 'gallery-section',
+        'camera-area', 'camera-input', 'camera-idle', 'camera-video', 'camera-controls',
+        'camera-switch', 'camera-system', 'camera-shutter', 'camera-error',
+        'btn-gallery-toggle', 'gallery-section',
         'gallery-wrap', 'gallery', 'gallery-empty',
         'screen-photo', 'btn-photo-back', 'btn-photo-delete', 'photo-preview', 'photo-gps',
         'photo-city', 'photo-address', 'city-prev', 'city-next',
@@ -107,7 +111,29 @@ function cacheElements() {
 
 function bindEvents() {
     // Главный экран
-    els.cameraArea.addEventListener('click', () => els.cameraInput.click());
+    els.cameraArea.addEventListener('click', (event) => {
+        if (event.target.closest('button')) return;
+        if (!state.cameraStream) startCameraPreview();
+    });
+    els.cameraArea.addEventListener('keydown', (event) => {
+        if ((event.key === 'Enter' || event.key === ' ') && !state.cameraStream) {
+            event.preventDefault();
+            startCameraPreview();
+        }
+    });
+    els.cameraShutter.addEventListener('click', (event) => {
+        event.stopPropagation();
+        captureFromPreview();
+    });
+    els.cameraSystem.addEventListener('click', (event) => {
+        event.stopPropagation();
+        stopCameraPreview();
+        els.cameraInput.click();
+    });
+    els.cameraSwitch.addEventListener('click', (event) => {
+        event.stopPropagation();
+        switchCamera();
+    });
     els.cameraInput.addEventListener('change', onCameraInputChange);
     els.btnSettings.addEventListener('click', () => openSettings());
     els.btnSendSelected.addEventListener('click', () => sendSelected());
@@ -151,7 +177,12 @@ function bindEvents() {
     window.addEventListener('offline', () => showToast('Нет сети — фото будут отправлены позже'));
 
     document.addEventListener('visibilitychange', () => {
-        if (document.hidden || !navigator.onLine || !state.pairing.isPaired()) return;
+        if (document.hidden) {
+            // Сворачиваем приложение — гасим камеру, чтобы не тратить батарею.
+            stopCameraPreview();
+            return;
+        }
+        if (!navigator.onLine || !state.pairing.isPaired()) return;
         syncNow({ silent: true }).catch(() => {});
     });
 }
@@ -162,6 +193,7 @@ function showScreen(screenId) {
     document.querySelectorAll('.screen').forEach((screen) => {
         screen.classList.toggle('active', screen.id === screenId);
     });
+    if (screenId !== 'screen-main') stopCameraPreview();
     window.scrollTo(0, 0);
 }
 
@@ -188,7 +220,8 @@ async function refreshGallery() {
         if (photo.id === state.selectedId) item.classList.add('selected');
 
         const img = document.createElement('img');
-        img.src = photo.dataUrl;
+        // В галерее используем миниатюру: список рисуется заметно быстрее.
+        img.src = photo.thumbUrl || photo.dataUrl;
         img.alt = photoLabel(photo);
         img.loading = 'lazy';
 
@@ -271,7 +304,7 @@ function renderSelected() {
     }
 
     els.selectedBlock.classList.remove('hidden');
-    els.selectedImg.src = photo.dataUrl;
+    els.selectedImg.src = photo.thumbUrl || photo.dataUrl;
     els.selectedName.textContent = photoLabel(photo);
     applyStatus(els.selectedStatus, photo.status);
 }
@@ -321,10 +354,166 @@ async function handleNewPhoto(file) {
         ? 'high'
         : requestedLevel;
 
+    await saveCapturedPhoto(dataUrl, gps, compressionLevel);
+}
+
+// ------------------------------------------------------ live-предпросмотр
+
+async function startCameraPreview() {
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        showCameraError('Камера недоступна в браузере — используйте системную камеру.');
+        return;
+    }
+
+    stopCameraPreview();
+
+    try {
+        const stream = await navigator.mediaDevices.getUserMedia({
+            video: {
+                facingMode: { ideal: state.cameraFacing },
+                width: { ideal: 1920 },
+                height: { ideal: 1080 }
+            },
+            audio: false
+        });
+
+        state.cameraStream = stream;
+        els.cameraVideo.srcObject = stream;
+        await els.cameraVideo.play();
+
+        els.cameraArea.classList.add('previewing');
+        els.cameraIdle.classList.add('hidden');
+        els.cameraVideo.classList.remove('hidden');
+        els.cameraControls.classList.remove('hidden');
+        els.cameraShutter.classList.remove('hidden');
+        hideCameraError();
+    } catch (err) {
+        console.warn('Не удалось включить камеру', err);
+        showCameraError('Нет доступа к камере. Можно снять системной камерой.');
+    }
+}
+
+function stopCameraPreview() {
+    if (state.cameraStream) {
+        state.cameraStream.getTracks().forEach((track) => track.stop());
+        state.cameraStream = null;
+    }
+    if (els.cameraVideo) els.cameraVideo.srcObject = null;
+    els.cameraArea.classList.remove('previewing');
+    els.cameraIdle.classList.remove('hidden');
+    els.cameraVideo.classList.add('hidden');
+    els.cameraControls.classList.add('hidden');
+    els.cameraShutter.classList.add('hidden');
+}
+
+async function switchCamera() {
+    state.cameraFacing = state.cameraFacing === 'environment' ? 'user' : 'environment';
+    if (state.cameraStream) await startCameraPreview();
+}
+
+function showCameraError(message) {
+    els.cameraError.textContent = message;
+    els.cameraError.classList.remove('hidden');
+    els.cameraControls.classList.remove('hidden');
+}
+
+function hideCameraError() {
+    els.cameraError.classList.add('hidden');
+    if (!state.cameraStream) els.cameraControls.classList.add('hidden');
+}
+
+/**
+ * Снимок кадра из live-предпросмотра. Кадр уже декодирован — нет ни запуска
+ * системной камеры, ни разбора EXIF, поэтому снимается быстро.
+ */
+async function captureFromPreview() {
+    const video = els.cameraVideo;
+    if (!state.cameraStream || !video || !video.videoWidth) return;
+
+    els.cameraShutter.disabled = true;
+    try {
+        const config = PhotoCompressor.getLevelConfig();
+        const maxWidth = config.maxWidth || 2048;
+
+        let width = video.videoWidth;
+        let height = video.videoHeight;
+        if (width > maxWidth) {
+            height = Math.round((height * maxWidth) / width);
+            width = maxWidth;
+        }
+
+        const canvas = document.createElement('canvas');
+        canvas.width = width;
+        canvas.height = height;
+        const context = canvas.getContext('2d');
+        if (!context) throw new Error('Canvas 2D недоступен');
+        context.drawImage(video, 0, 0, width, height);
+
+        stopCameraPreview();
+
+        const level = PhotoCompressor.getLevel();
+        const effectiveLevel = level === 'original' ? 'high' : level;
+        const quality = config.quality >= 1 ? 0.92 : config.quality;
+
+        let dataUrl = await PhotoCompressor.canvasToJpeg(canvas, quality);
+
+        // GPS быстрее взять у геолокации, чем разбирать EXIF исходного файла.
+        const gps = await getQuickPosition();
+        if (gps) dataUrl = PhotoCompressor.attachGpsExif(dataUrl, gps);
+
+        await saveCapturedPhoto(dataUrl, gps, effectiveLevel);
+    } catch (err) {
+        console.error('Ошибка съёмки', err);
+        await state.logger.error('Ошибка съёмки с предпросмотра', { message: err.message });
+        showToast('Не удалось сделать фото');
+    } finally {
+        els.cameraShutter.disabled = false;
+    }
+}
+
+/** Быстрый GPS: последняя известная позиция, ожидание не дольше 2.5 с. */
+function getQuickPosition(timeout = 2500) {
+    return new Promise((resolve) => {
+        if (!navigator.geolocation) {
+            resolve(null);
+            return;
+        }
+
+        let finished = false;
+        const timer = setTimeout(() => {
+            if (finished) return;
+            finished = true;
+            resolve(null);
+        }, timeout);
+
+        navigator.geolocation.getCurrentPosition(
+            (position) => {
+                if (finished) return;
+                finished = true;
+                clearTimeout(timer);
+                resolve({
+                    lat: Number(position.coords.latitude.toFixed(7)),
+                    lon: Number(position.coords.longitude.toFixed(7))
+                });
+            },
+            () => {
+                if (finished) return;
+                finished = true;
+                clearTimeout(timer);
+                resolve(null);
+            },
+            { enableHighAccuracy: false, timeout, maximumAge: 60000 }
+        );
+    });
+}
+
+/** Общая часть для обоих способов съёмки: поиск адреса, миниатюра, IndexedDB. */
+async function saveCapturedPhoto(dataUrl, gps, compressionLevel) {
     let city = '';
     let address = '';
     let name = '';
     let match = null;
+
     if (gps) {
         match = await state.db.findNearestLocation(gps.lat, gps.lon);
         if (match) {
@@ -334,9 +523,12 @@ async function handleNewPhoto(file) {
         }
     }
 
+    const thumbUrl = await PhotoCompressor.createThumbnail(dataUrl).catch(() => null);
+
     const photo = {
         id: `photo_${Date.now()}`,
         dataUrl,
+        thumbUrl,
         gps,
         name,
         city,
@@ -363,7 +555,7 @@ async function handleNewPhoto(file) {
     await selectPhoto(photo.id);
 
     if (!gps) {
-        showToast('GPS не найден — выберите город и адрес вручную');
+        showToast('GPS не найден — выберите город и адрес');
     } else if (!address) {
         showToast('Адрес не найден — выберите вручную');
     } else {

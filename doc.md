@@ -759,6 +759,43 @@ computeRevision учитывает name, city, address, side, lat, lon.
 20. ИНТЕРФЕЙС И ОБНОВЛЕНИЕ PWA (дополнение от 27.10.2026)
 ================================================================================
 
+21. LIVE-ПРЕДПРОСМОТР КАМЕРЫ (дополнение от 28.10.2026)
+================================================================================
+
+21.1. ЗАЧЕМ
+Раньше съёмка шла через системную камеру (<input capture>): запуск отдельного
+приложения, затем чтение EXIF (piexif.load), Canvas-сжатие, вставка EXIF и
+запись в IndexedDB. На телефоне это ощущалось как «медленно фотографирует».
+
+21.2. ЧТО СДЕЛАНО
+- Блок камеры открывает live-поток getUserMedia (facingMode environment,
+  ideal 1920x1080). Кнопка «●» снимает текущий кадр, «⇄» переключает камеру.
+- Кадр рисуется на canvas, кодируется canvas.toBlob -> JPEG (не toDataURL).
+- GPS берётся у navigator.geolocation (maximumAge 60s, ожидание до 2.5 с) и
+  пишется в EXIF через piexif.dump + piexif.insert (только GPS-теги).
+- Адрес и «Наименование» ищутся по локальной IndexedDB, как и раньше.
+- Если getUserMedia недоступен или запрещён — кнопка «Системная камера»
+  запускает штатный <input capture>; для него EXIF читается как раньше.
+- Поток гасится при уходе с главного экрана, сворачивании приложения и после
+  снимка (экономия батареи).
+- Миниатюры: при сохранении фото создаётся thumbUrl (240 px, JPEG 0.7),
+  галерея рисует миниатюры вместо полноразмерных dataURL.
+
+21.3. ЗАМЕРЫ (Chrome, виртуальная камера 1920x1080)
+  предпросмотр:  ~220 мс
+  снимок:        ~115 мс, 27 КБ JPEG
+  GPS/имя:       47.2566,39.7688 -> «1-й Конной Армии ул. 32, A»
+  поток после снимка остановлен.
+
+21.4. ФАЙЛЫ
+- index.html: video, shutter, switch, system-camera, error.
+- styles.css: .camera-area.previewing, .camera-video, .camera-shutter, .camera-chip.
+- app.js: startCameraPreview, stopCameraPreview, switchCamera, captureFromPreview,
+  getQuickPosition, saveCapturedPhoto; thumbUrl в галерее и выбранном фото.
+- compression.js: canvasToJpeg, createThumbnail, attachGpsExif, _loadImage.
+- Версия 1.3.0, SW geophoto-static-v11.
+
+================================================================================
 20.1. ГЛАВНЫЙ ЭКРАН
 - Кнопка синхронизации убрана из шапки. Синхронизация доступна только в
   настройках: «Синхронизировать базу» (btn-sync-now).
@@ -771,11 +808,11 @@ computeRevision учитывает name, city, address, side, lat, lon.
 - Очередь и настройки остались в шапке.
 
 20.2. ОБНОВЛЕНИЕ PWA
-- Service Worker: CACHE_NAME = geophoto-static-v10.
+- Service Worker: CACHE_NAME = geophoto-static-v11.
 - Регистрация: { updateViaCache: 'none' } + registration.update() при загрузке.
 - При активации нового SW (skipWaiting + clients.claim) срабатывает
   controllerchange -> однократный window.location.reload().
-- Настройки -> «О приложении»: версия (Logger.APP_VERSION = 1.2.5) и кнопка
+- Настройки -> «О приложении»: версия (Logger.APP_VERSION = 1.3.0) и кнопка
   «Проверить обновление» (registration.update()).
 - Ручной вариант: полностью закрыть и открыть PWA; на iOS — через Safari.
 - Данные (токен, IndexedDB, очередь) при обновлении не удаляются.
