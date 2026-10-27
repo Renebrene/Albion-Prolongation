@@ -1,0 +1,983 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#2196f3">
+    <title>GeoPhoto — админ-панель</title>
+    <style>
+        :root {
+            --primary: #2196f3;
+            --primary-dark: #1976d2;
+            --danger: #e53935;
+            --success: #43a047;
+            --warning: #fb8c00;
+            --bg: #f4f7fb;
+            --surface: #fff;
+            --surface-alt: #eef4fb;
+            --text: #1d2733;
+            --muted: #6b7a8c;
+            --border: #dce4ee;
+            --radius: 12px;
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            background: var(--bg);
+            color: var(--text);
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+            font-size: 15px;
+            line-height: 1.45;
+        }
+
+        header {
+            position: sticky;
+            top: 0;
+            z-index: 10;
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 20px;
+            background: var(--surface);
+            box-shadow: 0 2px 10px rgba(23, 43, 77, 0.08);
+        }
+
+        header h1 { margin: 0; font-size: 1.15rem; color: var(--primary-dark); }
+        header .spacer { flex: 1; }
+
+        main { max-width: 1280px; margin: 0 auto; padding: 20px; }
+
+        .card {
+            margin-bottom: 18px;
+            padding: 16px;
+            background: var(--surface);
+            border-radius: var(--radius);
+            box-shadow: 0 2px 10px rgba(23, 43, 77, 0.06);
+        }
+
+        .card h2 { margin: 0 0 14px; font-size: 1rem; }
+
+        .row { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 10px; }
+
+        label.field { display: flex; flex-direction: column; gap: 4px; min-width: 160px; flex: 1; }
+        label.field span { font-size: 0.78rem; font-weight: 600; color: var(--muted); }
+
+        input, select {
+            min-height: 40px;
+            padding: 8px 10px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            background: var(--surface);
+            color: var(--text);
+            font: inherit;
+            font-size: 0.9rem;
+        }
+
+        input:focus, select:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(33, 150, 243, 0.18);
+        }
+
+        input[type="password"] { min-width: 220px; }
+
+        button {
+            min-height: 40px;
+            padding: 8px 14px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            background: var(--surface);
+            color: var(--text);
+            font: inherit;
+            font-size: 0.88rem;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        button:hover { background: var(--surface-alt); }
+        button:disabled { opacity: 0.5; cursor: default; }
+        button.primary { background: var(--primary); border-color: var(--primary); color: #fff; }
+        button.primary:hover { background: var(--primary-dark); }
+        button.danger { color: var(--danger); border-color: #f3c4c2; }
+        button.small { min-height: 28px; padding: 3px 8px; font-size: 0.78rem; }
+
+        .tabs { display: flex; gap: 6px; margin-bottom: 16px; flex-wrap: wrap; }
+
+        .tab {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 999px;
+            background: var(--surface);
+            color: var(--muted);
+            box-shadow: 0 1px 4px rgba(23, 43, 77, 0.06);
+        }
+
+        .tab.active { background: var(--primary); color: #fff; }
+
+        .tab-panel { display: none; }
+        .tab-panel.active { display: block; }
+
+        table { width: 100%; border-collapse: collapse; font-size: 0.84rem; }
+        th, td { padding: 8px 10px; text-align: left; border-bottom: 1px solid var(--border); vertical-align: top; }
+        th { color: var(--muted); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.04em; }
+        tr:last-child td { border-bottom: none; }
+
+        .table-wrap { overflow-x: auto; }
+
+        code.token {
+            font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+            font-size: 0.78rem;
+            word-break: break-all;
+        }
+
+        .pill {
+            display: inline-block;
+            padding: 2px 9px;
+            border-radius: 999px;
+            font-size: 0.72rem;
+            font-weight: 700;
+            background: var(--surface-alt);
+            color: var(--muted);
+        }
+
+        .pill.active { background: #e8f5e9; color: #2e7d32; }
+        .pill.revoked { background: #ffebee; color: #c62828; }
+        .pill.expired { background: #fff3e0; color: #b26a00; }
+        .pill.info { background: var(--surface-alt); color: var(--primary-dark); }
+        .pill.warn { background: #fff3e0; color: #b26a00; }
+        .pill.error { background: #ffebee; color: #c62828; }
+
+        .stats-grid { display: grid; gap: 12px; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); }
+
+        .stat {
+            padding: 16px;
+            background: var(--surface-alt);
+            border-radius: var(--radius);
+        }
+
+        .stat .value { font-size: 1.8rem; font-weight: 700; color: var(--primary-dark); }
+        .stat .label { color: var(--muted); font-size: 0.82rem; }
+
+        .muted { color: var(--muted); font-size: 0.85rem; }
+        .error-text { color: var(--danger); }
+        .hidden { display: none !important; }
+
+        .status-bar {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.85rem;
+            color: var(--muted);
+        }
+
+        .dot { width: 9px; height: 9px; border-radius: 50%; background: var(--border); }
+        .dot.ok { background: var(--success); }
+        .dot.bad { background: var(--danger); }
+
+        .logs-context {
+            max-width: 460px;
+            font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+            font-size: 0.72rem;
+            white-space: pre-wrap;
+            word-break: break-word;
+            color: var(--muted);
+        }
+
+        #toast {
+            position: fixed;
+            left: 50%;
+            bottom: 24px;
+            transform: translateX(-50%);
+            padding: 10px 18px;
+            border-radius: 999px;
+            background: rgba(29, 39, 51, 0.94);
+            color: #fff;
+            font-size: 0.88rem;
+            z-index: 100;
+        }
+
+        @media (max-width: 640px) {
+            header { padding: 10px 14px; }
+            main { padding: 14px; }
+        }
+    </style>
+</head>
+<body>
+<header>
+    <h1>GeoPhoto · Админ-панель</h1>
+    <span class="spacer"></span>
+    <div class="row">
+        <label class="field" for="admin-secret">
+            <span>Секретный ключ (X-Admin-Secret)</span>
+            <input id="admin-secret" type="password" autocomplete="off" placeholder="ADMIN_SECRET">
+        </label>
+        <button id="btn-save-secret" class="primary">Войти</button>
+        <button id="btn-logout">Выйти</button>
+    </div>
+</header>
+
+<main>
+    <div id="status-bar" class="status-bar card">
+        <span id="status-dot" class="dot"></span>
+        <span id="status-text">Введите секретный ключ, чтобы загрузить данные.</span>
+    </div>
+
+    <div id="content" class="hidden">
+        <nav class="tabs">
+            <button class="tab active" data-tab="tokens">Токены</button>
+            <button class="tab" data-tab="locations">Локации</button>
+            <button class="tab" data-tab="logs">Логи</button>
+            <button class="tab" data-tab="stats">Статистика</button>
+        </nav>
+
+        <!-- Токены -->
+        <section id="panel-tokens" class="tab-panel active">
+            <div class="card">
+                <h2>Файлохранилище и XLSX-база адресов</h2>
+                <p id="storage-status" class="muted">Загрузка статуса…</p>
+                <p id="storage-error" class="error-text"></p>
+                <div class="row">
+                    <button id="btn-refresh-storage">Обновить статус</button>
+                    <button id="btn-pull-storage">Проверить XLSX сейчас</button>
+                </div>
+            </div>
+
+            <div class="card">
+                <h2>Новый токен устройства</h2>
+                <p id="tokens-managed-note" class="muted hidden">
+                    Токены выдаются в файлохранилище (8 кириллических букв, привязка к папке бригады).
+                    Локальное создание отключено.
+                </p>
+                <div class="row">
+                    <label class="field" for="new-device-name">
+                        <span>Имя устройства</span>
+                        <input id="new-device-name" type="text" maxlength="100" placeholder="Samsung Galaxy S21">
+                    </label>
+                    <label class="field" for="new-ttl">
+                        <span>Срок действия, дней</span>
+                        <input id="new-ttl" type="number" min="1" max="3650" value="365">
+                    </label>
+                    <label class="field" for="new-comment">
+                        <span>Комментарий</span>
+                        <input id="new-comment" type="text" maxlength="500" placeholder="Необязательно">
+                    </label>
+                    <button id="btn-create-token" class="primary">Создать токен</button>
+                </div>
+                <p id="created-token" class="muted hidden"></p>
+            </div>
+
+            <div class="card">
+                <h2>Токены</h2>
+                <div class="row" style="margin-bottom:12px">
+                    <button id="btn-refresh-tokens">Обновить</button>
+                </div>
+                <div class="table-wrap">
+                    <table>
+                        <thead>
+                        <tr>
+                            <th>Устройство</th>
+                            <th>Токен</th>
+                            <th>Создан</th>
+                            <th>Истекает</th>
+                            <th>Последняя связь</th>
+                            <th>Статус</th>
+                            <th>Действия</th>
+                        </tr>
+                        </thead>
+                        <tbody id="tokens-body"></tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- Локации -->
+        <section id="panel-locations" class="tab-panel">
+            <div class="card">
+                <h2>Новая локация</h2>
+                <p id="locations-managed-note" class="muted hidden">
+                    Локации импортируются из XLSX-файла в файлохранилище. Ручное добавление
+                    и удаление отключены; измените файл и нажмите «Проверить XLSX сейчас».
+                </p>
+                <div class="row">
+                    <label class="field" for="new-location-name">
+                        <span>Название</span>
+                        <input id="new-location-name" type="text" maxlength="200" placeholder="Москва, Красная площадь">
+                    </label>
+                    <label class="field" for="new-location-lat">
+                        <span>Широта</span>
+                        <input id="new-location-lat" type="number" step="any" min="-90" max="90" placeholder="55.7539">
+                    </label>
+                    <label class="field" for="new-location-lon">
+                        <span>Долгота</span>
+                        <input id="new-location-lon" type="number" step="any" min="-180" max="180" placeholder="37.6208">
+                    </label>
+                    <button id="btn-create-location" class="primary">Добавить</button>
+                </div>
+            </div>
+
+            <div class="card">
+                <h2>База локаций</h2>
+                <div class="row" style="margin-bottom:12px">
+                    <button id="btn-refresh-locations">Обновить</button>
+                </div>
+                <p id="locations-total" class="muted"></p>
+                <div class="table-wrap">
+                    <table>
+                        <thead>
+                        <tr>
+                            <th>Город</th>
+                            <th>Адрес и сторона</th>
+                            <th>Координаты</th>
+                            <th>Обновлена</th>
+                            <th>Действия</th>
+                        </tr>
+                        </thead>
+                        <tbody id="locations-body"></tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- Логи -->
+        <section id="panel-logs" class="tab-panel">
+            <div class="card">
+                <h2>Фильтры</h2>
+                <div class="row">
+                    <label class="field" for="filter-device">
+                        <span>Токен устройства</span>
+                        <input id="filter-device" type="text" placeholder="64 hex-символа">
+                    </label>
+                    <label class="field" for="filter-level">
+                        <span>Уровень</span>
+                        <select id="filter-level">
+                            <option value="">Все</option>
+                            <option value="info">info</option>
+                            <option value="warn">warn</option>
+                            <option value="error">error</option>
+                        </select>
+                    </label>
+                    <label class="field" for="filter-limit">
+                        <span>Записей</span>
+                        <input id="filter-limit" type="number" min="1" max="1000" value="100">
+                    </label>
+                    <button id="btn-load-logs" class="primary">Показать</button>
+                    <button id="btn-clean-logs" class="danger">Удалить старше 30 дней</button>
+                </div>
+                <p id="logs-total" class="muted"></p>
+            </div>
+
+            <div class="card">
+                <div class="table-wrap">
+                    <table>
+                        <thead>
+                        <tr>
+                            <th>Время</th>
+                            <th>Устройство</th>
+                            <th>Уровень</th>
+                            <th>Сообщение</th>
+                            <th>Контекст</th>
+                        </tr>
+                        </thead>
+                        <tbody id="logs-body"></tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- Статистика -->
+        <section id="panel-stats" class="tab-panel">
+            <div class="card">
+                <h2>Статистика</h2>
+                <div class="stats-grid">
+                    <div class="stat"><div class="value" id="stat-active">—</div><div class="label">Активных токенов</div></div>
+                    <div class="stat"><div class="value" id="stat-tokens">—</div><div class="label">Всего токенов</div></div>
+                    <div class="stat"><div class="value" id="stat-photos">—</div><div class="label">Фото</div></div>
+                    <div class="stat"><div class="value" id="stat-locations">—</div><div class="label">Локаций</div></div>
+                    <div class="stat"><div class="value" id="stat-logs">—</div><div class="label">Логов</div></div>
+                </div>
+            </div>
+
+            <div class="card">
+                <h2>Устройства</h2>
+                <div class="table-wrap">
+                    <table>
+                        <thead>
+                        <tr>
+                            <th>Устройство</th>
+                            <th>Токен</th>
+                            <th>Последняя связь</th>
+                            <th>Фото</th>
+                            <th>Логи</th>
+                            <th>Статус</th>
+                        </tr>
+                        </thead>
+                        <tbody id="devices-body"></tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+    </div>
+</main>
+
+<div id="toast" class="hidden"></div>
+
+<script>
+    'use strict';
+
+    const state = {
+        secret: sessionStorage.getItem('geophotoAdminSecret') || '',
+        activeTab: 'tokens',
+        toastTimer: null
+    };
+
+    const $ = (id) => document.getElementById(id);
+
+    // ------------------------------------------------------------------ API
+
+    async function api(path, options = {}) {
+        const headers = Object.assign({ 'X-Admin-Secret': state.secret }, options.headers || {});
+        if (options.body) headers['Content-Type'] = 'application/json';
+
+        let response;
+        try {
+            response = await fetch(path, Object.assign({}, options, { headers }));
+        } catch (err) {
+            throw new Error('Нет связи с сервером');
+        }
+
+        let data = null;
+        const text = await response.text();
+        if (text) {
+            try { data = JSON.parse(text); } catch (err) { data = null; }
+        }
+
+        if (!response.ok) {
+            const error = new Error((data && data.error) || ('HTTP ' + response.status));
+            error.status = response.status;
+            error.code = data && data.error;
+            throw error;
+        }
+
+        return data;
+    }
+
+    // --------------------------------------------------------------- helpers
+
+    function formatTime(value) {
+        const number = Number(value);
+        if (!Number.isFinite(number) || number <= 0) return '—';
+        return new Date(number).toLocaleString('ru-RU');
+    }
+
+    function el(tag, className, text) {
+        const node = document.createElement(tag);
+        if (className) node.className = className;
+        if (text !== undefined && text !== null) node.textContent = String(text);
+        return node;
+    }
+
+    function formatAddressSide(location) {
+        const address = String((location && location.address) || '').trim();
+        const side = String((location && location.side) || '').trim();
+        if (address && side) return address + ' (' + side + ')';
+        return address || (side ? '(' + side + ')' : '');
+    }
+
+    function cell(text, className) {
+        const td = document.createElement('td');
+        if (className) td.className = className;
+        td.textContent = text === undefined || text === null ? '' : String(text);
+        return td;
+    }
+
+    function tokenCell(token) {
+        const td = document.createElement('td');
+        const code = el('code', 'token', token.slice(0, 12) + '…' + token.slice(-6));
+        code.title = token;
+        td.appendChild(code);
+        td.appendChild(document.createTextNode(' '));
+        const copy = el('button', 'small', 'Копировать');
+        copy.addEventListener('click', () => {
+            navigator.clipboard.writeText(token)
+                .then(() => toast('Токен скопирован'))
+                .catch(() => toast('Не удалось скопировать'));
+        });
+        td.appendChild(copy);
+        return td;
+    }
+
+    function tokenStatus(row) {
+        if (row.revoked) return { text: 'Отозван', className: 'revoked' };
+        if (Number(row.expiresAt) <= Date.now()) return { text: 'Истёк', className: 'expired' };
+        return { text: 'Активен', className: 'active' };
+    }
+
+    function toast(message) {
+        if (state.toastTimer) clearTimeout(state.toastTimer);
+        const node = $('toast');
+        node.textContent = message;
+        node.classList.remove('hidden');
+        state.toastTimer = setTimeout(() => node.classList.add('hidden'), 3200);
+    }
+
+    function setStatus(text, ok) {
+        $('status-text').textContent = text;
+        $('status-dot').className = 'dot ' + (ok ? 'ok' : 'bad');
+    }
+
+    // ------------------------------------------------------------ хранилище
+
+    let storageState = null;
+
+    function setLocationEditing(enabled) {
+        ['new-location-name', 'new-location-lat', 'new-location-lon', 'btn-create-location']
+            .forEach((id) => {
+                const node = $(id);
+                if (node) node.disabled = !enabled;
+            });
+        const note = $('locations-managed-note');
+        if (note) note.classList.toggle('hidden', enabled);
+    }
+
+    function renderStorageStatus(status) {
+        storageState = status;
+        const node = $('storage-status');
+        const errorNode = $('storage-error');
+
+        if (!status.enabled) {
+            node.textContent = 'Интеграция не настроена. Сервер работает в локальном режиме токенов.';
+            errorNode.textContent = '';
+            setLocationEditing(true);
+            return;
+        }
+
+        const fileLine = status.fileName
+            ? status.fileName + ' (' + formatTime(Number(status.fileMtime) * 1000) + ')'
+            : 'файл не найден';
+        const lines = [
+            'Хранилище: ' + status.baseUrl,
+            'Проверка токенов: включена',
+            'XLSX: ' + (status.dbEnabled
+                ? fileLine + ' · папка ' + status.locationsFolderId
+                : 'не настроена'),
+            'Ревизия SQL: ' + (status.revision || '—'),
+            'Локаций локально: ' + status.locations,
+            'Последняя проверка: ' + formatTime(status.lastCheck),
+            'Последняя синхронизация: ' + formatTime(status.lastSync),
+            'Кэш: ' + (status.cachePath || '—')
+        ];
+        node.textContent = lines.join('\n');
+        node.style.whiteSpace = 'pre-line';
+        errorNode.textContent = status.lastError ? 'Ошибка: ' + status.lastError : '';
+
+        const createButton = $('btn-create-token');
+        const note = $('tokens-managed-note');
+        if (status.enabled) {
+            note.classList.remove('hidden');
+            createButton.disabled = true;
+            ['new-device-name', 'new-ttl', 'new-comment'].forEach((id) => {
+                $(id).disabled = true;
+            });
+        }
+
+        // При включённой XLSX-синхронизации ручное редактирование локаций запрещено.
+        setLocationEditing(!status.dbEnabled);
+    }
+
+    async function loadStorageStatus() {
+        try {
+            const status = await api('/admin/storage/status');
+            renderStorageStatus(status);
+        } catch (err) {
+            $('storage-status').textContent = 'Не удалось получить статус: ' + err.message;
+        }
+    }
+
+    async function syncStorage() {
+        const button = $('btn-pull-storage');
+        button.disabled = true;
+        try {
+            const data = await api('/admin/storage/sync', { method: 'POST' });
+            const result = data.result || {};
+            if (result.changed) {
+                toast('Обновлено локаций: ' + (result.updated || 0));
+            } else if (result.reason === 'no_file') {
+                toast('XLSX-файл не найден в папке');
+            } else if (result.fileChanged) {
+                toast('Файл проверен, данные не изменились');
+            } else {
+                toast('База актуальна');
+            }
+            await loadStorageStatus();
+            if (state.activeTab === 'locations') await loadLocations();
+        } catch (err) {
+            toast(err.message);
+            await loadStorageStatus();
+        } finally {
+            button.disabled = false;
+        }
+    }
+
+    // ---------------------------------------------------------------- токены
+
+    async function loadTokens() {
+        const data = await api('/admin/tokens');
+        const body = $('tokens-body');
+        body.textContent = '';
+
+        if (!data.tokens.length) {
+            const tr = document.createElement('tr');
+            const td = cell('Токенов пока нет');
+            td.colSpan = 7;
+            tr.appendChild(td);
+            body.appendChild(tr);
+            return;
+        }
+
+        for (const row of data.tokens) {
+            const tr = document.createElement('tr');
+            const status = tokenStatus(row);
+
+            tr.appendChild(cell(row.deviceName));
+            tr.appendChild(tokenCell(row.token));
+            tr.appendChild(cell(formatTime(row.createdAt)));
+            tr.appendChild(cell(formatTime(row.expiresAt)));
+            tr.appendChild(cell(formatTime(row.lastSeen)));
+
+            const statusTd = document.createElement('td');
+            statusTd.appendChild(el('span', 'pill ' + status.className, status.text));
+            tr.appendChild(statusTd);
+
+            const actions = document.createElement('td');
+            if (row.revoked) {
+                actions.appendChild(actionButton('Активировать', 'small', () => changeToken(row.token, 'activate')));
+            } else {
+                actions.appendChild(actionButton('Отозвать', 'small danger', () => changeToken(row.token, 'revoke')));
+            }
+            actions.appendChild(document.createTextNode(' '));
+            actions.appendChild(actionButton('Удалить', 'small danger', () => removeToken(row.token)));
+            tr.appendChild(actions);
+
+            body.appendChild(tr);
+        }
+    }
+
+    function actionButton(label, className, handler) {
+        const button = el('button', className, label);
+        button.type = 'button';
+        button.addEventListener('click', () => {
+            handler().catch((err) => toast(err.message));
+        });
+        return button;
+    }
+
+    async function changeToken(token, action) {
+        await api('/admin/tokens/' + encodeURIComponent(token) + '/' + action, { method: 'POST' });
+        toast(action === 'revoke' ? 'Токен отозван' : 'Токен активирован');
+        await loadTokens();
+    }
+
+    async function removeToken(token) {
+        if (!window.confirm('Удалить токен? Устройство потеряет доступ.')) return;
+        await api('/admin/tokens/' + encodeURIComponent(token), { method: 'DELETE' });
+        toast('Токен удалён');
+        await loadTokens();
+    }
+
+    async function createToken() {
+        const deviceName = $('new-device-name').value.trim();
+        if (!deviceName) {
+            toast('Укажите имя устройства');
+            return;
+        }
+
+        const button = $('btn-create-token');
+        button.disabled = true;
+        try {
+            const data = await api('/admin/tokens', {
+                method: 'POST',
+                body: JSON.stringify({
+                    deviceName,
+                    ttlDays: Number($('new-ttl').value) || 365,
+                    comment: $('new-comment').value.trim()
+                })
+            });
+
+            const output = $('created-token');
+            output.classList.remove('hidden');
+            output.textContent = 'Токен создан: ' + data.token + ' (скопируйте его сейчас)';
+            $('new-device-name').value = '';
+            $('new-comment').value = '';
+
+            await loadTokens();
+            toast('Токен создан');
+        } catch (err) {
+            toast(err.message);
+        } finally {
+            button.disabled = false;
+        }
+    }
+
+    // --------------------------------------------------------------- локации
+
+    async function loadLocations() {
+        const data = await api('/admin/locations?limit=5000');
+        $('locations-total').textContent = 'Всего локаций: ' + data.total;
+
+        const body = $('locations-body');
+        body.textContent = '';
+
+        if (!data.locations.length) {
+            const tr = document.createElement('tr');
+            const td = cell('База локаций пуста — загрузите XLSX в папку «база данных» или добавьте локацию выше.');
+            td.colSpan = 5;
+            tr.appendChild(td);
+            body.appendChild(tr);
+            return;
+        }
+
+        for (const location of data.locations) {
+            const tr = document.createElement('tr');
+            tr.appendChild(cell(location.city || '—'));
+            tr.appendChild(cell(formatAddressSide(location) || location.name || '—'));
+            tr.appendChild(cell(Number(location.lat).toFixed(6) + ', ' + Number(location.lon).toFixed(6)));
+            tr.appendChild(cell(formatTime(location.updatedAt)));
+
+            const actions = document.createElement('td');
+            if (!(storageState && storageState.dbEnabled)) {
+                actions.appendChild(actionButton('Удалить', 'small danger', () => removeLocation(location.id)));
+            }
+            tr.appendChild(actions);
+
+            body.appendChild(tr);
+        }
+    }
+
+    async function createLocation() {
+        const name = $('new-location-name').value.trim();
+        const lat = Number($('new-location-lat').value);
+        const lon = Number($('new-location-lon').value);
+
+        if (!name || !Number.isFinite(lat) || !Number.isFinite(lon)) {
+            toast('Заполните название и координаты');
+            return;
+        }
+
+        const button = $('btn-create-location');
+        button.disabled = true;
+        try {
+            await api('/admin/locations', {
+                method: 'POST',
+                body: JSON.stringify({ name, lat, lon })
+            });
+            $('new-location-name').value = '';
+            $('new-location-lat').value = '';
+            $('new-location-lon').value = '';
+            await loadLocations();
+            toast('Локация добавлена');
+        } catch (err) {
+            toast(err.message);
+        } finally {
+            button.disabled = false;
+        }
+    }
+
+    async function removeLocation(id) {
+        if (!window.confirm('Удалить локацию из базы?')) return;
+        await api('/admin/locations/' + encodeURIComponent(id), { method: 'DELETE' });
+        toast('Локация удалена');
+        await loadLocations();
+    }
+
+    // ------------------------------------------------------------------ логи
+
+    async function loadLogs() {
+        const params = new URLSearchParams();
+        const device = $('filter-device').value.trim();
+        const level = $('filter-level').value;
+        const limit = Number($('filter-limit').value) || 100;
+
+        if (device) params.set('device', device);
+        if (level) params.set('level', level);
+        params.set('limit', String(limit));
+
+        const data = await api('/admin/logs?' + params.toString());
+        $('logs-total').textContent = 'Всего записей по фильтру: ' + data.total;
+
+        const body = $('logs-body');
+        body.textContent = '';
+
+        if (!data.logs.length) {
+            const tr = document.createElement('tr');
+            const td = cell('Логов по фильтру нет');
+            td.colSpan = 5;
+            tr.appendChild(td);
+            body.appendChild(tr);
+            return;
+        }
+
+        for (const entry of data.logs) {
+            const tr = document.createElement('tr');
+            tr.appendChild(cell(formatTime(entry.timestamp), 'muted'));
+
+            const deviceTd = document.createElement('td');
+            deviceTd.appendChild(el('div', '', entry.deviceName || '—'));
+            const tokenNode = el('code', 'token', String(entry.deviceToken).slice(0, 10) + '…');
+            tokenNode.title = entry.deviceToken;
+            deviceTd.appendChild(tokenNode);
+            tr.appendChild(deviceTd);
+
+            const levelTd = document.createElement('td');
+            levelTd.appendChild(el('span', 'pill ' + entry.level, entry.level));
+            tr.appendChild(levelTd);
+
+            tr.appendChild(cell(entry.message));
+
+            let contextText = entry.context || '';
+            try {
+                contextText = JSON.stringify(JSON.parse(contextText), null, 1);
+            } catch (err) { /* оставляем как есть */ }
+            tr.appendChild(cell(contextText, 'logs-context'));
+
+            body.appendChild(tr);
+        }
+    }
+
+    async function cleanLogs() {
+        if (!window.confirm('Удалить логи старше 30 дней?')) return;
+        const data = await api('/admin/logs?olderThanDays=30', { method: 'DELETE' });
+        toast('Удалено записей: ' + data.deleted);
+        await loadLogs();
+    }
+
+    // ---------------------------------------------------------------- статистика
+
+    async function loadStats() {
+        const [stats, devices] = await Promise.all([
+            api('/admin/stats'),
+            api('/admin/devices')
+        ]);
+
+        $('stat-active').textContent = stats.activeTokens;
+        $('stat-tokens').textContent = stats.totalTokens;
+        $('stat-photos').textContent = stats.totalPhotos;
+        $('stat-locations').textContent = stats.totalLocations;
+        $('stat-logs').textContent = stats.totalLogs;
+
+        const body = $('devices-body');
+        body.textContent = '';
+
+        if (!devices.devices.length) {
+            const tr = document.createElement('tr');
+            const td = cell('Устройств пока нет');
+            td.colSpan = 6;
+            tr.appendChild(td);
+            body.appendChild(tr);
+            return;
+        }
+
+        for (const device of devices.devices) {
+            const tr = document.createElement('tr');
+            const status = tokenStatus(device);
+
+            tr.appendChild(cell(device.deviceName));
+            tr.appendChild(tokenCell(device.token));
+            tr.appendChild(cell(formatTime(device.lastSeen)));
+            tr.appendChild(cell(device.photos));
+            tr.appendChild(cell(device.logs));
+
+            const statusTd = document.createElement('td');
+            statusTd.appendChild(el('span', 'pill ' + status.className, status.text));
+            tr.appendChild(statusTd);
+
+            body.appendChild(tr);
+        }
+    }
+
+    // ------------------------------------------------------------------ вкладки
+
+    async function switchTab(tab) {
+        state.activeTab = tab;
+        document.querySelectorAll('.tab').forEach((button) => {
+            button.classList.toggle('active', button.dataset.tab === tab);
+        });
+        document.querySelectorAll('.tab-panel').forEach((panel) => {
+            panel.classList.toggle('active', panel.id === 'panel-' + tab);
+        });
+        await refreshActiveTab();
+    }
+
+    async function refreshActiveTab() {
+        try {
+            await loadStorageStatus();
+            if (state.activeTab === 'tokens') await loadTokens();
+            if (state.activeTab === 'locations') await loadLocations();
+            if (state.activeTab === 'logs') await loadLogs();
+            if (state.activeTab === 'stats') await loadStats();
+            setStatus('Данные загружены. ' + new Date().toLocaleTimeString('ru-RU'), true);
+        } catch (err) {
+            setStatus('Ошибка: ' + err.message, false);
+            if (err.status === 401) {
+                $('content').classList.add('hidden');
+                toast('Неверный секретный ключ');
+            }
+        }
+    }
+
+    // --------------------------------------------------------------- вход
+
+    function saveSecret() {
+        const value = $('admin-secret').value.trim();
+        if (!value) {
+            toast('Введите секретный ключ');
+            return;
+        }
+        state.secret = value;
+        sessionStorage.setItem('geophotoAdminSecret', value);
+        $('content').classList.remove('hidden');
+        setStatus('Ключ сохранён, загружаем данные…', true);
+        refreshActiveTab();
+    }
+
+    function logout() {
+        state.secret = '';
+        sessionStorage.removeItem('geophotoAdminSecret');
+        $('admin-secret').value = '';
+        $('content').classList.add('hidden');
+        setStatus('Вы вышли. Введите секретный ключ для продолжения.', false);
+    }
+
+    // --------------------------------------------------------------- события
+
+    $('btn-save-secret').addEventListener('click', saveSecret);
+    $('admin-secret').addEventListener('keydown', (event) => {
+        if (event.key === 'Enter') saveSecret();
+    });
+    $('btn-logout').addEventListener('click', logout);
+
+    $('btn-create-token').addEventListener('click', createToken);
+    $('btn-refresh-tokens').addEventListener('click', () => loadTokens().catch((err) => toast(err.message)));
+    $('btn-refresh-storage').addEventListener('click', () => loadStorageStatus());
+    $('btn-pull-storage').addEventListener('click', () => syncStorage());
+    $('btn-create-location').addEventListener('click', createLocation);
+    $('btn-refresh-locations').addEventListener('click', () => loadLocations().catch((err) => toast(err.message)));
+    $('btn-load-logs').addEventListener('click', () => loadLogs().catch((err) => toast(err.message)));
+    $('btn-clean-logs').addEventListener('click', () => cleanLogs().catch((err) => toast(err.message)));
+
+    document.querySelectorAll('.tab').forEach((button) => {
+        button.addEventListener('click', () => switchTab(button.dataset.tab));
+    });
+
+    // Автовход, если ключ уже сохранён в этой сессии.
+    if (state.secret) {
+        $('admin-secret').value = state.secret;
+        $('content').classList.remove('hidden');
+        refreshActiveTab();
+    }
+</script>
+</body>
+</html>

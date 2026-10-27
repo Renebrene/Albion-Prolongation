@@ -1,0 +1,35 @@
+# Зависимости
+node_modules/
+
+# База данных и служебные файлы SQLite
+server/geophoto.db
+server/geophoto.db-shm
+server/geophoto.db-wal
+
+# Принятые фото
+server/uploads/*
+!server/uploads/.gitkeep
+
+# Переменные окружения
+.env
+server/.env
+
+# Локальная конфигурация интеграции (содержит токены)
+server/integration.json
+
+# Кэш скачанных XLSX
+server/cache/
+
+# ОС и редакторы
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.log
+
+# Экспорт переписки (не коммитим)
+chat-export-*.json
+
+# Python
+__pycache__/
+*.pyc

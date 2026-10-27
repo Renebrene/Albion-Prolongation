@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <meta name="theme-color" content="#2196f3">
+    <meta name="description" content="GeoPhoto — съёмка фото с GPS-адресом и отправкой на сервер">
+    <title>GeoPhoto</title>
+
+    <link rel="manifest" href="manifest.json">
+    <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
+    <link rel="apple-touch-icon" href="icons/icon-192.png">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<div class="app">
+
+    <!-- ============================ ГЛАВНЫЙ ЭКРАН ============================ -->
+    <section id="screen-main" class="screen active">
+        <header class="app-header">
+            <h1>GeoPhoto</h1>
+            <div class="header-actions">
+                <button id="btn-send-selected" class="send-btn" type="button" title="Отправить выбранное фото" aria-label="Отправить выбранное фото">
+                    <span aria-hidden="true">➤</span>
+                    <span>Отправить</span>
+                </button>
+                <span id="queue-badge" class="badge hidden" title="Фото в очереди">0</span>
+                <button id="btn-settings" class="icon-btn" title="Настройки" aria-label="Настройки">⚙</button>
+            </div>
+        </header>
+
+        <div id="selected-block" class="selected hidden">
+            <img id="selected-img" alt="Выбранное фото">
+            <div class="selected-info">
+                <div id="selected-name" class="selected-name">Без адреса</div>
+                <span id="selected-status" class="status">В очереди</span>
+            </div>
+            <button id="btn-clear-selection" class="icon-btn small" title="Снять выбор" aria-label="Снять выбор">✕</button>
+        </div>
+
+        <button id="camera-area" class="camera-area" type="button" aria-label="Сделать фото">
+            <svg class="camera-icon" viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M9 3 7.2 5H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-3.2L15 3H9Zm3 5.5A5.5 5.5 0 1 1 6.5 14 5.5 5.5 0 0 1 12 8.5Zm0 2A3.5 3.5 0 1 0 15.5 14 3.5 3.5 0 0 0 12 10.5Z"/>
+            </svg>
+            <span class="camera-hint">Нажмите, чтобы сделать фото</span>
+        </button>
+
+        <input id="camera-input" type="file" accept="image/*" capture="environment" hidden>
+
+        <section class="gallery-section">
+            <div class="section-head">
+                <h2>ГАЛЕРЕЯ</h2>
+                <button id="btn-gallery-toggle" class="text-btn" type="button">Свернуть</button>
+            </div>
+            <div id="gallery-wrap" class="gallery-wrap">
+                <div id="gallery" class="gallery" aria-label="Галерея фотографий"></div>
+                <p id="gallery-empty" class="empty">Пока нет фотографий</p>
+            </div>
+        </section>
+    </section>
+
+    <!-- ============================ ЭКРАН ФОТО ============================ -->
+    <section id="screen-photo" class="screen">
+        <header class="app-header">
+            <button id="btn-photo-back" class="icon-btn" title="Назад" aria-label="Назад">←</button>
+            <h1>Фото</h1>
+            <button id="btn-photo-delete" class="icon-btn danger" title="Удалить фото" aria-label="Удалить фото">🗑</button>
+        </header>
+
+        <div class="photo-body">
+            <div class="photo-frame">
+                <img id="photo-preview" alt="Просмотр фото">
+                <span id="photo-gps" class="gps-badge">GPS нет</span>
+            </div>
+
+            <p id="photo-name" class="muted">Наименование: —</p>
+
+            <label class="field" for="photo-city">
+                <span>Город</span>
+                <input id="photo-city" type="text" list="cities-list" autocomplete="off"
+                       placeholder="Начните вводить город">
+                <datalist id="cities-list"></datalist>
+            </label>
+
+            <label class="field" for="photo-address">
+                <span>Адрес и сторона</span>
+                <input id="photo-address" type="text" list="addresses-list" autocomplete="off"
+                       placeholder="Начните вводить адрес и сторону">
+                <datalist id="addresses-list"></datalist>
+            </label>
+
+            <div class="photo-meta">
+                <span id="photo-status" class="status">В очереди</span>
+                <span id="photo-level" class="muted"></span>
+            </div>
+        </div>
+
+        <footer class="screen-footer">
+            <button id="btn-photo-send" class="primary-btn" type="button">Отправить</button>
+        </footer>
+    </section>
+
+    <!-- ============================ НАСТРОЙКИ ============================ -->
+    <section id="screen-settings" class="screen">
+        <header class="app-header">
+            <button id="btn-settings-back" class="icon-btn" title="Назад" aria-label="Назад">←</button>
+            <h1>Настройки</h1>
+            <span class="header-spacer"></span>
+        </header>
+
+        <div class="settings-body">
+            <section class="card">
+                <h2>🔗 Сопряжение с сервером</h2>
+
+                <label class="field" for="server-url">
+                    <span>Адрес сервера</span>
+                    <input id="server-url" type="url" inputmode="url" placeholder="https://example.com">
+                </label>
+
+                <label class="field" for="token-input">
+                    <span>Токен бригады</span>
+                    <input id="token-input" type="text" autocomplete="off" spellcheck="false"
+                           maxlength="8" autocapitalize="none" placeholder="8 кириллических букв">
+                </label>
+                <p class="muted">8 кириллических букв, регистр не важен. Токен выдаёт администратор файлохранилища.</p>
+
+                <label class="field" for="device-name">
+                    <span>Имя устройства</span>
+                    <input id="device-name" type="text" maxlength="100" autocomplete="off">
+                </label>
+
+                <div class="row">
+                    <button id="btn-pair" class="primary-btn" type="button">Сохранить</button>
+                    <button id="btn-unpair" class="secondary-btn" type="button">Отвязать</button>
+                </div>
+
+                <p id="pairing-status" class="muted">Не сопряжено</p>
+            </section>
+
+            <section class="card">
+                <h2>📸 Сохранение в JPG с EXIF</h2>
+
+                <label class="field" for="compression-level">
+                    <span>Степень сжатия</span>
+                    <select id="compression-level">
+                        <option value="original">Оригинал (без сжатия)</option>
+                        <option value="high">Высокое (85%, до 2048 px)</option>
+                        <option value="medium">Среднее (70%, до 1600 px)</option>
+                        <option value="low">Низкое (50%, до 1024 px)</option>
+                    </select>
+                </label>
+
+                <p id="compression-info" class="muted"></p>
+            </section>
+
+            <section class="card">
+                <h2>🔄 Синхронизация базы</h2>
+
+                <label class="switch-row" for="autosync-enabled">
+                    <input id="autosync-enabled" type="checkbox">
+                    <span>Автосинхронизация раз в сутки</span>
+                </label>
+
+                <p id="last-sync" class="muted">Последняя синхронизация: —</p>
+                <p id="locations-count" class="muted">Локаций в базе: 0</p>
+
+                <button id="btn-sync-now" class="secondary-btn" type="button">Синхронизировать базу</button>
+            </section>
+
+            <section class="card">
+                <h2>📋 Логи приложения</h2>
+                <p id="logs-count" class="muted">Записей: 0</p>
+                <div class="row">
+                    <button id="btn-view-logs" class="secondary-btn" type="button">Посмотреть</button>
+                    <button id="btn-clear-logs" class="secondary-btn" type="button">Очистить</button>
+                </div>
+            </section>
+
+            <section class="card">
+                <h2>📤 Очередь отправки</h2>
+                <p id="queue-count" class="muted">Фото в очереди: 0</p>
+            </section>
+
+            <section class="card">
+                <h2>ℹ️ О приложении</h2>
+                <p class="muted">Версия: <span id="app-version">—</span></p>
+                <button id="btn-check-update" class="secondary-btn" type="button">Проверить обновление</button>
+                <p id="update-status" class="muted"></p>
+            </section>
+        </div>
+    </section>
+</div>
+
+<!-- ============================ МОДАЛЬНОЕ ОКНО ЛОГОВ ============================ -->
+<div id="logs-modal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="logs-title">
+    <div class="modal-content">
+        <header class="modal-header">
+            <h2 id="logs-title">Логи приложения</h2>
+            <button id="btn-logs-close" class="icon-btn small" aria-label="Закрыть">✕</button>
+        </header>
+        <div id="logs-list" class="logs-list"></div>
+    </div>
+</div>
+
+<div id="toast" class="toast hidden" role="status" aria-live="polite"></div>
+
+<script src="lib/piexif.js"></script>
+<script src="db.js"></script>
+<script src="exif.js"></script>
+<script src="compression.js"></script>
+<script src="logger.js"></script>
+<script src="pairing.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

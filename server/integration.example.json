@@ -1,0 +1,10 @@
+{
+    "storageBaseUrl": "http://127.0.0.1:5000",
+    "dbFolderId": "UUID папки «пролонгация/база данных»",
+    "dbToken": "8 кириллических букв",
+    "locationsFile": "locations.xlsx",
+    "cacheDir": "cache",
+    "xlsxCheckSeconds": 60,
+    "dbSyncMinutes": 15,
+    "verifyTtlSeconds": 60
+}
