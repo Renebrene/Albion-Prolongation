@@ -1,0 +1,27 @@
+# Пользовательский systemd-юнит для сервера «Пролонгация».
+# Установка:
+#   mkdir -p ~/.config/systemd/user
+#   cp deploy/prolongation.service.example ~/.config/systemd/user/prolongation.service
+#   cp deploy/prolongation.env.example server/prolongation.env   # и вписать ADMIN_SECRET
+#   chmod 600 server/prolongation.env
+#   systemctl --user daemon-reload
+#   systemctl --user enable --now prolongation.service
+#   loginctl enable-linger "$USER"      # запуск без входа в систему
+
+[Unit]
+Description=Prolongation (GeoPhoto) PWA server
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+WorkingDirectory=/home/alexice/projects/albion-prolong/server
+EnvironmentFile=/home/alexice/projects/albion-prolong/server/prolongation.env
+ExecStart=/home/alexice/.nvm/versions/node/v22.23.2/bin/node /home/alexice/projects/albion-prolong/server/server.js
+Restart=always
+RestartSec=3
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=default.target

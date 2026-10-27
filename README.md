@@ -133,6 +133,34 @@ ADMIN_SECRET="длинный-секрет" npm start
 В PWA: «Настройки» → адрес GeoPhoto-сервера → токен бригады (8 букв, регистр
 не важен) → «Сохранить». Локации загрузятся сразу после сопряжения.
 
+## Автозапуск (systemd)
+
+Сервер работает как **пользовательский** systemd-юнит `prolongation.service`
+(запуск от имени пользователя, без root). Linger включён, поэтому служба
+поднимается при загрузке машины, даже без входа в графическую сессию.
+
+```bash
+systemctl --user status prolongation.service      # состояние
+systemctl --user restart prolongation.service     # перезапуск
+systemctl --user stop prolongation.service        # остановка
+journalctl --user -u prolongation.service -f      # логи
+```
+
+Параметры окружения лежат в `server/prolongation.env` (права 0600, в git не
+коммитится): `ADMIN_SECRET`, `PORT`, `PYTHON_BIN`.
+
+Установка с нуля:
+
+```bash
+mkdir -p ~/.config/systemd/user
+cp deploy/prolongation.service.example ~/.config/systemd/user/prolongation.service
+cp deploy/prolongation.env.example server/prolongation.env   # вписать ADMIN_SECRET
+chmod 600 server/prolongation.env
+systemctl --user daemon-reload
+systemctl --user enable --now prolongation.service
+loginctl enable-linger "$USER"
+```
+
 ## Синхронизация XLSX
 
 При старте, по кнопке «Синхронизировать» и раз в `dbSyncMinutes` минут:

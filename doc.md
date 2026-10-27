@@ -825,3 +825,28 @@ computeRevision учитывает name, city, address, side, lat, lon.
   «Проверить обновление» (registration.update()).
 - Ручной вариант: полностью закрыть и открыть PWA; на iOS — через Safari.
 - Данные (токен, IndexedDB, очередь) при обновлении не удаляются.
+
+================================================================================
+22. АВТОЗАПУСК СЕРВЕРА (systemd, дополнение от 28.10.2026)
+================================================================================
+
+Сервер «Пролонгация» переведён на пользовательский systemd-юнит
+~/.config/systemd/user/prolongation.service (запуск от пользователя, без root).
+Linger для пользователя включён (Linger=yes), поэтому служба стартует при
+загрузке системы без входа в графическую сессию.
+
+- WorkingDirectory: /home/alexice/projects/albion-prolong/server
+- EnvironmentFile:  server/prolongation.env (0600; ADMIN_SECRET, PORT, PYTHON_BIN)
+- ExecStart:        node server.js (путь nvm v22.23.2)
+- Restart=always, RestartSec=3, логи в journald.
+
+Команды:
+  systemctl --user status|restart|stop prolongation.service
+  journalctl --user -u prolongation.service -f
+
+Примеры для установки в репозитории: deploy/prolongation.service.example,
+deploy/prolongation.env.example. Файл server/prolongation.env добавлен в
+.gitignore (server/*.env), секрет в git не попадает.
+
+Прежний ручной запуск (setsid/nohup из терминала) больше не нужен: служба
+переживает перезапуск и reboot.

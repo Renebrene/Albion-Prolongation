@@ -13,6 +13,7 @@ server/uploads/*
 # Переменные окружения
 .env
 server/.env
+server/*.env
 
 # Локальная конфигурация интеграции (содержит токены)
 server/integration.json
