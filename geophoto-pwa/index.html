@@ -79,7 +79,14 @@
         <header class="app-header">
             <button id="btn-photo-back" class="icon-btn" title="Назад" aria-label="Назад">←</button>
             <h1>Фото</h1>
-            <button id="btn-photo-delete" class="icon-btn danger" title="Удалить фото" aria-label="Удалить фото">🗑</button>
+            <div class="header-actions">
+                <button id="btn-photo-send" class="send-btn" type="button"
+                        title="Отправить фото" aria-label="Отправить фото">
+                    <span aria-hidden="true">➤</span>
+                    <span>Отправить</span>
+                </button>
+                <button id="btn-photo-delete" class="icon-btn danger" title="Удалить фото" aria-label="Удалить фото">🗑</button>
+            </div>
         </header>
 
         <div class="photo-body">
@@ -111,10 +118,6 @@
                 <div id="address-list" class="combo-list" role="listbox" aria-label="Список адресов"></div>
             </div>
         </div>
-
-        <footer class="screen-footer">
-            <button id="btn-photo-send" class="primary-btn" type="button">Отправить</button>
-        </footer>
     </section>
 
     <!-- ============================ НАСТРОЙКИ ============================ -->
