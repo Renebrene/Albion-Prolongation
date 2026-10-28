@@ -7,7 +7,7 @@
  *   - навигация: сеть, при недоступности — закэшированный index.html.
  */
 
-const CACHE_NAME = 'geophoto-static-v14';
+const CACHE_NAME = 'geophoto-static-v16';
 
 const STATIC_ASSETS = [
     './',

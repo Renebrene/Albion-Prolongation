@@ -777,6 +777,8 @@ body {
     scrollbar-width: thin;
     scrollbar-color: var(--primary) var(--surface-alt);
     scrollbar-gutter: stable;
+    /* Разрешаем вертикальную прокрутку пальцем, но не мешаем тапу по строке */
+    touch-action: pan-y;
 }
 
 /* Видимый скроллбар списка */
@@ -800,15 +802,31 @@ body {
 }
 
 .combo-option {
+    display: flex;
+    align-items: center;
+    gap: 10px;
     padding: 10px 12px;
     font-size: 0.92rem;
     line-height: 1.25;
     color: var(--text);
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.combo-option input[type="radio"] {
+    flex: 0 0 auto;
+    width: 18px;
+    height: 18px;
+    margin: 0;
+    accent-color: var(--primary);
+}
+
+.combo-text {
+    flex: 1;
+    min-width: 0;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    cursor: pointer;
-    -webkit-tap-highlight-color: transparent;
 }
 
 .combo-option:hover,
@@ -826,6 +844,14 @@ body {
 
 .combo-note {
     border-top: 1px solid var(--border);
+}
+
+/* Постоянно видимый список адресов (не выпадающий) */
+.combo-list.inline {
+    position: static;
+    margin-top: 8px;
+    max-height: 220px;
+    box-shadow: none;
 }
 
 .row {
