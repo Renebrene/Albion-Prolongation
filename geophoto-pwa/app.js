@@ -753,8 +753,10 @@ async function openPhotoScreen(photoId) {
     state.addressActiveIndex = -1;
     renderAddressList();
 
-    els.photoLevel.textContent = PhotoCompressor.getLevelConfig(photo.compressionLevel).label;
-    applyStatus(els.photoStatus, photo.status);
+    if (els.photoLevel) {
+        els.photoLevel.textContent = PhotoCompressor.getLevelConfig(photo.compressionLevel).label;
+    }
+    if (els.photoStatus) applyStatus(els.photoStatus, photo.status);
 
     showScreen('screen-photo');
 }
@@ -762,8 +764,10 @@ async function openPhotoScreen(photoId) {
 function updatePhotoStatusView() {
     const photo = state.photos.find((item) => item.id === state.currentPhotoId);
     if (!photo) return;
-    applyStatus(els.photoStatus, photo.status);
-    els.photoLevel.textContent = PhotoCompressor.getLevelConfig(photo.compressionLevel).label;
+    if (els.photoStatus) applyStatus(els.photoStatus, photo.status);
+    if (els.photoLevel) {
+        els.photoLevel.textContent = PhotoCompressor.getLevelConfig(photo.compressionLevel).label;
+    }
     if (els.photoName) els.photoName.textContent = `Наименование: ${photo.name || '—'}`;
 }
 

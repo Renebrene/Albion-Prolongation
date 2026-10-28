@@ -568,6 +568,11 @@ body {
 
 .photo-frame {
     position: relative;
+    /* Фиксированная высота: окно не прыгает при смене фото. */
+    flex: 0 0 auto;
+    height: 30vh;
+    min-height: 180px;
+    max-height: 280px;
     background: #0f1720;
     border-radius: var(--radius);
     overflow: hidden;
@@ -576,7 +581,7 @@ body {
 .photo-frame img {
     display: block;
     width: 100%;
-    max-height: 45vh;
+    height: 100%;
     object-fit: contain;
 }
 
@@ -592,12 +597,6 @@ body {
     backdrop-filter: blur(4px);
 }
 
-.photo-meta {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 10px;
-}
 
 .screen-footer {
     position: static;
@@ -736,7 +735,12 @@ body {
     cursor: default;
 }
 
-/* Адрес: комбобокс — строка поиска + прокручиваемый список */
+/* Город и адрес стоят ближе друг к другу. */
+.field.city-field {
+    margin-bottom: 0;
+}
+
+/* Адрес: строка поиска + постоянно раскрытый список */
 .field.combo {
     position: relative;
 }
@@ -766,8 +770,9 @@ body {
 .combo-list {
     /* Список не выпадает, а всегда виден под полем поиска. */
     margin-top: 8px;
-    /* 5 строк по ~40 px — как в Фотобазе */
-    max-height: 200px;
+    /* Ровно 4 строки по 40 px + отступы; меньше адресов — место сохраняется. */
+    height: 170px;
+    flex: 0 0 auto;
     overflow-y: auto;
     overscroll-behavior: contain;
     -webkit-overflow-scrolling: touch;
@@ -803,7 +808,10 @@ body {
 }
 
 .combo-option {
-    padding: 10px 12px;
+    display: flex;
+    align-items: center;
+    height: 40px;
+    padding: 0 12px;
     font-size: 0.92rem;
     line-height: 1.25;
     color: var(--text);
