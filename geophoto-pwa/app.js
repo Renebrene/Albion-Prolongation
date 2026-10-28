@@ -1136,10 +1136,16 @@ function getAddressValues(city) {
         .sort((a, b) => a.localeCompare(b, 'ru'));
 }
 
+/** Город по умолчанию для новых фото. */
+const DEFAULT_CITY = 'Ростов-на-Дону';
+
 /** Город: readonly-поле и кнопки ◀ ▶, листают список по кругу. */
 function setupCityStepper(photo) {
     state.cityValues = getCityValues();
-    const city = String((photo && photo.city) || '').trim();
+    let city = String((photo && photo.city) || '').trim();
+    if (!city && state.cityValues.some((value) => normalizeKey(value) === normalizeKey(DEFAULT_CITY))) {
+        city = DEFAULT_CITY;
+    }
     if (city && !state.cityValues.some((value) => normalizeKey(value) === normalizeKey(city))) {
         state.cityValues.unshift(city);
     }

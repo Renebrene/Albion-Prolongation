@@ -721,8 +721,10 @@ side/name/display_name. vendor/xls_import.py:
 
 19.3. ОКНО ФОТО
   1) «Город» — readonly-поле и кнопки ◀ ▶, листают города по кругу.
-     При смене города адрес подбирается автоматически (первый из города),
-     имя появляется сразу; из списка выпасть нельзя.
+     По умолчанию для нового фото выбирается «Ростов-на-Дону», если он есть
+     в базе (DEFAULT_CITY в app.js). При смене города адрес подбирается
+     автоматически (первый из города), имя появляется сразу; из списка
+     выпасть нельзя.
   2) «Адрес и сторона» — поле поиска и постоянно раскрытый список под ним
      (как списочное поле, не выпадающее): видны 4-5 строк (max-height
      200px), остальное — прокруткой с видимым скроллбаром. Выбор одиночный:
@@ -799,7 +801,7 @@ computeRevision учитывает name, city, address, side, lat, lon.
 - Скролл перенесён внутрь экрана: .screen height 100dvh + overflow hidden,
   .settings-body и .photo-body имеют свою прокрутку, .screen-footer статичен.
   Шапка остаётся сверху, контент под неё не заезжает.
-- Версия 1.6.2, SW geophoto-static-v18.
+- Версия 1.6.3, SW geophoto-static-v19.
 
 21.4. ФАЙЛЫ
 - index.html: video, shutter, switch, system-camera, error.
@@ -807,7 +809,7 @@ computeRevision учитывает name, city, address, side, lat, lon.
 - app.js: startCameraPreview, stopCameraPreview, switchCamera, captureFromPreview,
   getQuickPosition, saveCapturedPhoto; thumbUrl в галерее и выбранном фото.
 - compression.js: canvasToJpeg, createThumbnail, attachGpsExif, _loadImage.
-- Версия 1.6.2, SW geophoto-static-v18.
+- Версия 1.6.3, SW geophoto-static-v19.
 
 ================================================================================
 20.1. ГЛАВНЫЙ ЭКРАН
@@ -822,11 +824,11 @@ computeRevision учитывает name, city, address, side, lat, lon.
 - Очередь и настройки остались в шапке.
 
 20.2. ОБНОВЛЕНИЕ PWA
-- Service Worker: CACHE_NAME = geophoto-static-v18.
+- Service Worker: CACHE_NAME = geophoto-static-v19.
 - Регистрация: { updateViaCache: 'none' } + registration.update() при загрузке.
 - При активации нового SW (skipWaiting + clients.claim) срабатывает
   controllerchange -> однократный window.location.reload().
-- Настройки -> «О приложении»: версия (Logger.APP_VERSION = 1.6.2) и кнопка
+- Настройки -> «О приложении»: версия (Logger.APP_VERSION = 1.6.3) и кнопка
   «Проверить обновление» (registration.update()).
 - Ручной вариант: полностью закрыть и открыть PWA; на iOS — через Safari.
 - Данные (токен, IndexedDB, очередь) при обновлении не удаляются.
