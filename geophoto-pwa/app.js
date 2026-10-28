@@ -11,6 +11,8 @@ const state = {
     pairing: null,
     photos: [],
     locationsCache: [],
+    cityValues: [],
+    cityIndex: -1,
     addressSaveTimer: null,
     cameraStream: null,
     cameraFacing: 'environment',
@@ -91,7 +93,7 @@ function cacheElements() {
         'btn-gallery-toggle', 'gallery-section',
         'gallery-wrap', 'gallery', 'gallery-empty',
         'screen-photo', 'btn-photo-back', 'btn-photo-delete', 'photo-preview', 'photo-gps',
-        'photo-city', 'photo-address', 'city-dropdown', 'address-dropdown', 'photo-name',
+        'photo-city', 'photo-address', 'city-prev', 'city-next', 'address-dropdown', 'photo-name',
         'photo-status', 'photo-level', 'btn-photo-send',
         'screen-settings', 'btn-settings-back', 'server-url', 'token-input', 'device-name',
         'btn-pair', 'btn-unpair', 'pairing-status', 'compression-level', 'compression-info',
@@ -152,6 +154,8 @@ function bindEvents() {
     els.btnPhotoBack.addEventListener('click', closePhotoScreen);
     els.btnPhotoDelete.addEventListener('click', deleteCurrentPhoto);
     els.btnPhotoSend.addEventListener('click', sendCurrentPhoto);
+    els.cityPrev.addEventListener('click', () => cycleCity(-1));
+    els.cityNext.addEventListener('click', () => cycleCity(1));
 
     // Настройки
     els.btnSettingsBack.addEventListener('click', () => showScreen('screen-main'));
@@ -741,7 +745,7 @@ async function openPhotoScreen(photoId) {
         await refreshLocationsCache();
     }
 
-    els.photoCity.value = photo.city || '';
+    setupCityStepper(photo);
     els.photoAddress.value = photo.address || '';
     els.photoName.textContent = `Наименование: ${photo.name || '—'}`;
 
@@ -1124,12 +1128,52 @@ function getAddressValues(city) {
         .sort((a, b) => a.localeCompare(b, 'ru'));
 }
 
+/** Город: readonly-поле и кнопки ◀ ▶, листают список по кругу. */
+function setupCityStepper(photo) {
+    state.cityValues = getCityValues();
+    const city = String((photo && photo.city) || '').trim();
+    if (city && !state.cityValues.some((value) => normalizeKey(value) === normalizeKey(city))) {
+        state.cityValues.unshift(city);
+    }
+    state.cityIndex = city
+        ? state.cityValues.findIndex((value) => normalizeKey(value) === normalizeKey(city))
+        : -1;
+    els.photoCity.value = state.cityIndex >= 0 ? state.cityValues[state.cityIndex] : '';
+    els.photoCity.title = els.photoCity.value;
+    updateCityStepperButtons();
+}
+
+function updateCityStepperButtons() {
+    els.cityPrev.disabled = state.cityValues.length === 0;
+    els.cityNext.disabled = state.cityValues.length === 0;
+}
+
+function cycleCity(delta) {
+    if (state.cityValues.length === 0) return;
+
+    state.cityIndex = state.cityIndex < 0
+        ? (delta > 0 ? 0 : state.cityValues.length - 1)
+        : (state.cityIndex + delta + state.cityValues.length) % state.cityValues.length;
+
+    els.photoCity.value = state.cityValues[state.cityIndex];
+    els.photoCity.title = els.photoCity.value;
+
+    // Подбираем адрес под новый город, чтобы имя появилось сразу.
+    const addresses = getAddressValues(els.photoCity.value);
+    const current = els.photoAddress.value.trim();
+    const stillValid = addresses.some((address) => normalizeKey(address) === normalizeKey(current));
+    if (!stillValid) els.photoAddress.value = addresses[0] || '';
+
+    closeCombo('address');
+    updateSelectionUI();
+}
+
 // ------------------------------------------------ комбобокс города и адреса
 
 const COMBO_LIMIT = 500;
 
 function setupCombos() {
-    setupCombo('city', els.photoCity, els.cityDropdown, getCityValues);
+    // Город выбирается кнопками ◀ ▶, комбобокс — только для адреса.
     setupCombo('address', els.photoAddress, els.addressDropdown,
         () => getAddressValues(els.photoCity.value.trim()));
 

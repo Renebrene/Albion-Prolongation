@@ -720,10 +720,11 @@ side/name/display_name. vendor/xls_import.py:
 Формат координат и заголовков — из парсера Локатора.
 
 19.3. ОКНО ФОТО
-Комбобоксы (строка поиска + выпадающий список с видимым скроллбаром):
-  1) «Город» — поиск по городам; выбор подставляет город;
-  2) «Адрес и сторона» — поиск по адресам; после выбора города список
-     ограничен его адресами.
+  1) «Город» — readonly-поле и кнопки ◀ ▶, листают города по кругу.
+     При смене города адрес подбирается автоматически (первый из города),
+     имя появляется сразу; из списка выпасть нельзя.
+  2) «Адрес и сторона» — комбобокс: строка поиска + выпадающий список
+     с видимым скроллбаром; поиск только по адресам выбранного города.
 Ввод фильтрует список; стрелки/Enter/Escape поддерживаются.
 После выбора города и адреса «Наименование» сразу показывается под фото.
 Поиск локации локальный: точное «адрес (сторона)» -> адрес без стороны ->
@@ -793,7 +794,7 @@ computeRevision учитывает name, city, address, side, lat, lon.
 - Скролл перенесён внутрь экрана: .screen height 100dvh + overflow hidden,
   .settings-body и .photo-body имеют свою прокрутку, .screen-footer статичен.
   Шапка остаётся сверху, контент под неё не заезжает.
-- Версия 1.5.0, SW geophoto-static-v13.
+- Версия 1.5.1, SW geophoto-static-v14.
 
 21.4. ФАЙЛЫ
 - index.html: video, shutter, switch, system-camera, error.
@@ -801,7 +802,7 @@ computeRevision учитывает name, city, address, side, lat, lon.
 - app.js: startCameraPreview, stopCameraPreview, switchCamera, captureFromPreview,
   getQuickPosition, saveCapturedPhoto; thumbUrl в галерее и выбранном фото.
 - compression.js: canvasToJpeg, createThumbnail, attachGpsExif, _loadImage.
-- Версия 1.5.0, SW geophoto-static-v13.
+- Версия 1.5.1, SW geophoto-static-v14.
 
 ================================================================================
 20.1. ГЛАВНЫЙ ЭКРАН
@@ -816,11 +817,11 @@ computeRevision учитывает name, city, address, side, lat, lon.
 - Очередь и настройки остались в шапке.
 
 20.2. ОБНОВЛЕНИЕ PWA
-- Service Worker: CACHE_NAME = geophoto-static-v13.
+- Service Worker: CACHE_NAME = geophoto-static-v14.
 - Регистрация: { updateViaCache: 'none' } + registration.update() при загрузке.
 - При активации нового SW (skipWaiting + clients.claim) срабатывает
   controllerchange -> однократный window.location.reload().
-- Настройки -> «О приложении»: версия (Logger.APP_VERSION = 1.5.0) и кнопка
+- Настройки -> «О приложении»: версия (Logger.APP_VERSION = 1.5.1) и кнопка
   «Проверить обновление» (registration.update()).
 - Ручной вариант: полностью закрыть и открыть PWA; на iOS — через Safari.
 - Данные (токен, IndexedDB, очередь) при обновлении не удаляются.

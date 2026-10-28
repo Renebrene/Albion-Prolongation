@@ -675,7 +675,68 @@ body {
     color: #9aa8b8;
 }
 
-/* Комбобокс: строка поиска + прокручиваемый список */
+/* Город: readonly-поле и кнопки ◀ ▶ */
+.stepper {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.step-value {
+    flex: 1;
+    min-width: 0;
+    min-height: 44px;
+    padding: 10px 12px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    background: var(--surface-alt);
+    color: var(--text);
+    font-size: 0.95rem;
+    font-family: inherit;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    cursor: default;
+}
+
+.step-value:focus {
+    outline: none;
+}
+
+.step-value::placeholder {
+    color: #9aa8b8;
+}
+
+.step-btn {
+    flex: 0 0 auto;
+    width: 44px;
+    height: 44px;
+    padding: 0;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    background: var(--surface);
+    color: var(--primary-dark);
+    font-size: 1rem;
+    line-height: 1;
+    cursor: pointer;
+    transition: background 0.15s ease, transform 0.1s ease;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.step-btn:hover {
+    background: var(--primary-light);
+}
+
+.step-btn:active {
+    transform: scale(0.94);
+}
+
+.step-btn:disabled {
+    opacity: 0.4;
+    cursor: default;
+}
+
+/* Адрес: комбобокс — строка поиска + прокручиваемый список */
 .field.combo {
     position: relative;
 }
