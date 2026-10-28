@@ -14,6 +14,7 @@ const state = {
     cityValues: [],
     cityIndex: -1,
     addressSaveTimer: null,
+    addressActiveIndex: -1,
     cameraStream: null,
     cameraFacing: 'environment',
     selectedId: null,
@@ -748,6 +749,7 @@ async function openPhotoScreen(photoId) {
     els.photoAddress.value = photo.address || '';
     els.photoName.textContent = `Наименование: ${photo.name || '—'}`;
     renderAddressList();
+    closeAddressList();
 
     els.photoLevel.textContent = PhotoCompressor.getLevelConfig(photo.compressionLevel).label;
     applyStatus(els.photoStatus, photo.status);
@@ -1168,44 +1170,144 @@ function cycleCity(delta) {
     const stillValid = addresses.some((address) => normalizeKey(address) === normalizeKey(current));
     if (!stillValid) els.photoAddress.value = addresses[0] || '';
 
-    renderAddressList();
+    renderAddressList({ showAll: true });
     updateSelectionUI();
 }
 
-// ------------------------------------------ постоянно видимый список адресов
+// --------------------------- адрес: поле с поиском и списком (как q-select)
 
 const LIST_LIMIT = 500;
 
 function setupAddressList() {
     if (!els.photoAddress || !els.addressList) return;
 
-    els.photoAddress.addEventListener('input', () => renderAddressList());
-
-    els.addressList.addEventListener('change', (event) => {
-        const radio = event.target instanceof Element
-            ? event.target.closest('.combo-radio')
-            : null;
-        if (!radio) return;
-        selectAddress(radio.value);
+    // Открытие: показываем все адреса выбранного города. Текст выделяется,
+    // поэтому ввод сразу заменяет его поисковым запросом.
+    const open = () => {
+        renderAddressList({ showAll: true });
+        positionAddressList();
+        setAddressListVisible(true);
+        if (typeof els.photoAddress.select === 'function') els.photoAddress.select();
+    };
+    els.photoAddress.addEventListener('focus', open);
+    els.photoAddress.addEventListener('click', () => {
+        if (els.addressList.classList.contains('hidden')) open();
     });
 
-    // Страховка: тап по строке/надписи, если change не сработал.
+    // Поиск по ходу ввода: каждая буква фильтрует список.
+    els.photoAddress.addEventListener('input', () => {
+        state.addressActiveIndex = -1;
+        renderAddressList();
+        setAddressListVisible(true);
+    });
+
+    els.photoAddress.addEventListener('keydown', onAddressKeydown);
+
+    // Строки не фокусируются, поэтому тап по списку не снимает фокус с поля.
+    els.photoAddress.addEventListener('blur', () => {
+        setTimeout(() => {
+            if (!isAddressFocusInside()) closeAddressList();
+        }, 120);
+    });
+
     els.addressList.addEventListener('click', (event) => {
         const option = event.target instanceof Element
             ? event.target.closest('.combo-option')
             : null;
         if (!option) return;
-        if (option.dataset.value !== els.photoAddress.value.trim()) {
-            selectAddress(option.dataset.value);
-        }
+        selectAddress(option.dataset.value);
+    });
+
+    // Тап вне поля и списка закрывает список.
+    document.addEventListener('click', (event) => {
+        if (!(event.target instanceof Node)) return;
+        if (els.addressList.classList.contains('hidden')) return;
+        if (event.target === els.photoAddress || els.addressList.contains(event.target)) return;
+        closeAddressList();
     });
 }
 
-/** Список виден всегда; поиск и выбранный город фильтруют строки. */
-function renderAddressList() {
+/** Список раскрывается вниз, а если места мало — вверх. */
+function positionAddressList() {
+    const field = els.photoAddress.closest('.field.combo');
+    if (!field) return;
+
+    const rect = field.getBoundingClientRect();
+    const spaceBelow = window.innerHeight - rect.bottom;
+    const spaceAbove = rect.top;
+    const needed = 212; // 5 строк + отступы
+
+    els.addressList.classList.toggle(
+        'drop-up',
+        spaceBelow < needed && spaceAbove > spaceBelow
+    );
+}
+
+function onAddressKeydown(event) {
+    const options = [...els.addressList.querySelectorAll('.combo-option')];
+
+    if (event.key === 'Escape') {
+        closeAddressList();
+        els.photoAddress.blur();
+        return;
+    }
+
+    if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+        if (options.length === 0) return;
+        event.preventDefault();
+        const step = event.key === 'ArrowDown' ? 1 : -1;
+        let index = state.addressActiveIndex + step;
+        if (index < 0) index = options.length - 1;
+        if (index >= options.length) index = 0;
+        setAddressActiveIndex(index);
+        return;
+    }
+
+    if (event.key === 'Enter') {
+        const option = options[state.addressActiveIndex];
+        if (!option) return;
+        event.preventDefault();
+        selectAddress(option.dataset.value);
+    }
+}
+
+function setAddressActiveIndex(index) {
+    state.addressActiveIndex = index;
+    const options = [...els.addressList.querySelectorAll('.combo-option')];
+    options.forEach((option, position) => {
+        option.classList.toggle('active', position === index);
+    });
+    if (options[index]) options[index].scrollIntoView({ block: 'nearest' });
+}
+
+function isAddressFocusInside() {
+    const active = document.activeElement;
+    return active === els.photoAddress
+        || (active instanceof Node && els.addressList.contains(active));
+}
+
+function setAddressListVisible(visible) {
+    els.addressList.classList.toggle('hidden', !visible);
+    els.photoAddress.setAttribute('aria-expanded', visible ? 'true' : 'false');
+    if (!visible) {
+        state.addressActiveIndex = -1;
+        els.addressList.querySelectorAll('.combo-option.active')
+            .forEach((option) => option.classList.remove('active'));
+    }
+}
+
+function closeAddressList() {
+    setAddressListVisible(false);
+}
+
+/**
+ * Строит список адресов выбранного города.
+ * showAll — при открытии показать все строки, иначе фильтр по введённому тексту.
+ */
+function renderAddressList({ showAll = false } = {}) {
     if (!els.addressList) return;
 
-    const query = normalizeKey(els.photoAddress.value);
+    const query = showAll ? '' : normalizeKey(els.photoAddress.value);
     let values = getAddressValues(els.photoCity.value.trim());
     if (query) {
         values = values.filter((value) => normalizeKey(value).includes(query));
@@ -1213,6 +1315,7 @@ function renderAddressList() {
 
     const total = values.length;
     const shown = values.slice(0, LIST_LIMIT);
+    const selectedKey = normalizeKey(els.photoAddress.value);
 
     els.addressList.textContent = '';
 
@@ -1226,25 +1329,17 @@ function renderAddressList() {
 
     const fragment = document.createDocumentFragment();
     for (const value of shown) {
-        const item = document.createElement('label');
+        const item = document.createElement('div');
         item.className = 'combo-option';
         item.dataset.value = value;
         item.setAttribute('role', 'option');
+        item.title = value;
 
-        const radio = document.createElement('input');
-        radio.type = 'radio';
-        radio.className = 'combo-radio';
-        radio.name = 'combo-address';
-        radio.value = value;
-        if (normalizeKey(value) === query) radio.checked = true;
+        const isSelected = normalizeKey(value) === selectedKey;
+        item.setAttribute('aria-selected', isSelected ? 'true' : 'false');
+        if (isSelected) item.classList.add('selected');
 
-        const text = document.createElement('span');
-        text.className = 'combo-text';
-        text.textContent = value;
-        text.title = value;
-
-        item.appendChild(radio);
-        item.appendChild(text);
+        item.textContent = value;
         fragment.appendChild(item);
     }
     els.addressList.appendChild(fragment);
@@ -1255,11 +1350,16 @@ function renderAddressList() {
         note.textContent = `Показано ${shown.length} из ${total}. Уточните поиск.`;
         els.addressList.appendChild(note);
     }
+
+    if (showAll) {
+        const selected = els.addressList.querySelector('.combo-option.selected');
+        if (selected) selected.scrollIntoView({ block: 'nearest' });
+    }
 }
 
 function selectAddress(value) {
     els.photoAddress.value = value;
-    renderAddressList();
+    closeAddressList();
     updateSelectionUI();
 }
 

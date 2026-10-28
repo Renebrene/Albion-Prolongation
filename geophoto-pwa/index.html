@@ -100,11 +100,16 @@
                 </div>
             </div>
 
-            <div class="field">
+            <div class="field combo">
                 <span>Адрес и сторона</span>
-                <input id="photo-address" class="combo-input" type="text" autocomplete="off"
-                       placeholder="Поиск адреса и стороны">
-                <div id="address-list" class="combo-list inline" role="listbox" aria-label="Список адресов"></div>
+                <div class="combo-field">
+                    <input id="photo-address" class="combo-input" type="text" autocomplete="off"
+                           placeholder="Поиск адреса и стороны"
+                           role="combobox" aria-autocomplete="list"
+                           aria-expanded="false" aria-controls="address-list">
+                    <span class="combo-arrow" aria-hidden="true">▾</span>
+                </div>
+                <div id="address-list" class="combo-list hidden" role="listbox" aria-label="Список адресов"></div>
             </div>
 
             <div class="photo-meta">
