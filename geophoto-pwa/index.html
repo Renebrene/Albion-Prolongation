@@ -90,24 +90,22 @@
 
             <p id="photo-name" class="muted">Наименование: —</p>
 
-            <div class="field">
+            <div class="field combo">
                 <span>Город</span>
-                <div class="stepper">
-                    <input id="photo-city" class="step-value" type="text" readonly
-                           placeholder="Не выбрано" aria-readonly="true">
-                    <button id="city-prev" class="step-btn" type="button" aria-label="Предыдущий город">◀</button>
-                    <button id="city-next" class="step-btn" type="button" aria-label="Следующий город">▶</button>
-                </div>
+                <input id="photo-city" class="combo-input" type="text" autocomplete="off"
+                       placeholder="Поиск города"
+                       role="combobox" aria-autocomplete="list"
+                       aria-expanded="false" aria-controls="city-dropdown">
+                <div id="city-dropdown" class="combo-list hidden" role="listbox"></div>
             </div>
 
-            <div class="field">
+            <div class="field combo">
                 <span>Адрес и сторона</span>
-                <div class="stepper">
-                    <input id="photo-address" class="step-value" type="text" readonly
-                           placeholder="Не выбрано" aria-readonly="true">
-                    <button id="address-prev" class="step-btn" type="button" aria-label="Предыдущий адрес">◀</button>
-                    <button id="address-next" class="step-btn" type="button" aria-label="Следующий адрес">▶</button>
-                </div>
+                <input id="photo-address" class="combo-input" type="text" autocomplete="off"
+                       placeholder="Поиск адреса и стороны"
+                       role="combobox" aria-autocomplete="list"
+                       aria-expanded="false" aria-controls="address-dropdown">
+                <div id="address-dropdown" class="combo-list hidden" role="listbox"></div>
             </div>
 
             <div class="photo-meta">

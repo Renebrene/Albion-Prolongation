@@ -675,65 +675,96 @@ body {
     color: #9aa8b8;
 }
 
-/* Выбор города и адреса кнопками ◀ ▶ */
-.stepper {
-    display: flex;
-    align-items: center;
-    gap: 8px;
+/* Комбобокс: строка поиска + прокручиваемый список */
+.field.combo {
+    position: relative;
 }
 
-.step-value {
-    flex: 1;
-    min-width: 0;
+.combo-input {
+    width: 100%;
     min-height: 44px;
     padding: 10px 12px;
     border: 1px solid var(--border);
     border-radius: var(--radius-sm);
-    background: var(--surface-alt);
+    background: var(--surface);
     color: var(--text);
     font-size: 0.95rem;
     font-family: inherit;
+}
+
+.combo-input:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(33, 150, 243, 0.18);
+}
+
+.combo-list {
+    position: absolute;
+    top: calc(100% + 4px);
+    left: 0;
+    right: 0;
+    z-index: 70;
+    max-height: 260px;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+    padding: 4px 0;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    box-shadow: 0 8px 24px rgba(23, 43, 77, 0.18);
+    scrollbar-width: thin;
+    scrollbar-color: var(--primary) var(--surface-alt);
+    scrollbar-gutter: stable;
+}
+
+/* Видимый скроллбар списка */
+.combo-list::-webkit-scrollbar {
+    width: 10px;
+}
+
+.combo-list::-webkit-scrollbar-track {
+    background: var(--surface-alt);
+    border-radius: 5px;
+}
+
+.combo-list::-webkit-scrollbar-thumb {
+    background: var(--primary);
+    border: 2px solid var(--surface);
+    border-radius: 5px;
+}
+
+.combo-list::-webkit-scrollbar-thumb:hover {
+    background: var(--primary-dark);
+}
+
+.combo-option {
+    padding: 10px 12px;
+    font-size: 0.92rem;
+    line-height: 1.25;
+    color: var(--text);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    cursor: default;
-}
-
-.step-value:focus {
-    outline: none;
-}
-
-.step-value::placeholder {
-    color: #9aa8b8;
-}
-
-.step-btn {
-    flex: 0 0 auto;
-    width: 44px;
-    height: 44px;
-    padding: 0;
-    border: 1px solid var(--border);
-    border-radius: var(--radius-sm);
-    background: var(--surface);
-    color: var(--primary-dark);
-    font-size: 1rem;
-    line-height: 1;
     cursor: pointer;
-    transition: background 0.15s ease, transform 0.1s ease;
     -webkit-tap-highlight-color: transparent;
 }
 
-.step-btn:hover {
+.combo-option:hover,
+.combo-option.active {
     background: var(--primary-light);
+    color: var(--primary-dark);
 }
 
-.step-btn:active {
-    transform: scale(0.94);
+.combo-empty,
+.combo-note {
+    padding: 10px 12px;
+    font-size: 0.82rem;
+    color: var(--text-muted);
 }
 
-.step-btn:disabled {
-    opacity: 0.4;
-    cursor: default;
+.combo-note {
+    border-top: 1px solid var(--border);
 }
 
 .row {
