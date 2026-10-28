@@ -723,13 +723,13 @@ side/name/display_name. vendor/xls_import.py:
   1) «Город» — readonly-поле и кнопки ◀ ▶, листают города по кругу.
      При смене города адрес подбирается автоматически (первый из города),
      имя появляется сразу; из списка выпасть нельзя.
-  2) «Адрес и сторона» — поле с поиском и выпадающий список как q-select в
-     Фотобазе: видны 4-5 строк (max-height 200px), остальное — прокруткой с
-     видимым скроллбаром. Выбор одиночный: без радиокнопок и мультивыбора;
-     тап по строке выбирает адрес и закрывает список. Поиск фильтрует список
-     по ходу ввода, город ограничивает его своими адресами; touch-action:
-     pan-y не мешает прокрутке. Если снизу мало места, список раскрывается
-     вверх (.combo-list.drop-up).
+  2) «Адрес и сторона» — поле поиска и постоянно раскрытый список под ним
+     (как списочное поле, не выпадающее): видны 4-5 строк (max-height
+     200px), остальное — прокруткой с видимым скроллбаром. Выбор одиночный:
+     без радиокнопок и мультивыбора; тап по строке выбирает адрес. Поиск
+     фильтрует список по ходу ввода, город ограничивает его своими адресами;
+     touch-action: pan-y не мешает прокрутке. Фокус в поле показывает весь
+     список города.
 Ввод фильтрует список; стрелки/Enter/Escape поддерживаются.
 После выбора города и адреса «Наименование» сразу показывается под фото.
 Поиск локации локальный: точное «адрес (сторона)» -> адрес без стороны ->
@@ -799,7 +799,7 @@ computeRevision учитывает name, city, address, side, lat, lon.
 - Скролл перенесён внутрь экрана: .screen height 100dvh + overflow hidden,
   .settings-body и .photo-body имеют свою прокрутку, .screen-footer статичен.
   Шапка остаётся сверху, контент под неё не заезжает.
-- Версия 1.6.1, SW geophoto-static-v17.
+- Версия 1.6.2, SW geophoto-static-v18.
 
 21.4. ФАЙЛЫ
 - index.html: video, shutter, switch, system-camera, error.
@@ -807,7 +807,7 @@ computeRevision учитывает name, city, address, side, lat, lon.
 - app.js: startCameraPreview, stopCameraPreview, switchCamera, captureFromPreview,
   getQuickPosition, saveCapturedPhoto; thumbUrl в галерее и выбранном фото.
 - compression.js: canvasToJpeg, createThumbnail, attachGpsExif, _loadImage.
-- Версия 1.6.1, SW geophoto-static-v17.
+- Версия 1.6.2, SW geophoto-static-v18.
 
 ================================================================================
 20.1. ГЛАВНЫЙ ЭКРАН
@@ -822,11 +822,11 @@ computeRevision учитывает name, city, address, side, lat, lon.
 - Очередь и настройки остались в шапке.
 
 20.2. ОБНОВЛЕНИЕ PWA
-- Service Worker: CACHE_NAME = geophoto-static-v17.
+- Service Worker: CACHE_NAME = geophoto-static-v18.
 - Регистрация: { updateViaCache: 'none' } + registration.update() при загрузке.
 - При активации нового SW (skipWaiting + clients.claim) срабатывает
   controllerchange -> однократный window.location.reload().
-- Настройки -> «О приложении»: версия (Logger.APP_VERSION = 1.6.1) и кнопка
+- Настройки -> «О приложении»: версия (Logger.APP_VERSION = 1.6.2) и кнопка
   «Проверить обновление» (registration.update()).
 - Ручной вариант: полностью закрыть и открыть PWA; на iOS — через Safari.
 - Данные (токен, IndexedDB, очередь) при обновлении не удаляются.
