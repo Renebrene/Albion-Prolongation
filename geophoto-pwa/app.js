@@ -58,9 +58,20 @@ async function init() {
     await renderSettings();
     await refreshLocationsCache();
 
+    // Диагностика PWA: по этим полям видно, почему приложение открылось
+    // в браузере, а не отдельным окном (HTTP, нет SW, ярлык вместо установки).
+    const displayStandalone = typeof window.matchMedia === 'function'
+        && window.matchMedia('(display-mode: standalone)').matches;
+
     await state.logger.info('Приложение запущено', {
         appVersion: Logger.APP_VERSION,
-        paired: state.pairing.isPaired()
+        paired: state.pairing.isPaired(),
+        origin: window.location.origin,
+        secureContext: window.isSecureContext,
+        displayMode: displayStandalone ? 'standalone' : 'browser',
+        serviceWorker: !('serviceWorker' in navigator)
+            ? 'unsupported'
+            : (navigator.serviceWorker.controller ? 'controlled' : 'not-controlled')
     });
 
     // Автосинхронизация и отправка очереди не должны блокировать первый рендер.
