@@ -61,7 +61,7 @@ function computeRevision(points) {
     const normalized = points
         .map((point) => [
             point.name, point.city || '', point.address || '', point.side || '',
-            point.lat, point.lon
+            point.format || '', point.lat, point.lon
         ])
         .sort((a, b) => {
             const left = JSON.stringify(a);
@@ -314,6 +314,9 @@ class XlsxSync {
             const city = String((point && point.city) || '').trim().slice(0, 200);
             const address = String((point && point.address) || '').trim().slice(0, 500);
             const side = String((point && point.side) || '').trim().slice(0, 20);
+            // Формат нужен, чтобы свернуть поверхности в стороны по правилу
+            // «Сайта»: у щита и экрана A1/A2 — разные стороны.
+            const format = String((point && point.format) || '').trim().slice(0, 120);
             const lat = Number(point && point.lat);
             const lon = Number(point && point.lon);
 
@@ -328,13 +331,14 @@ class XlsxSync {
                 city.toLowerCase(),
                 address.toLowerCase(),
                 side.toLowerCase(),
+                format.toLowerCase(),
                 lat.toFixed(6),
                 lon.toFixed(6)
             ].join('|');
             if (seen.has(key)) continue;
             seen.add(key);
 
-            rows.push({ name: displayName, city, address, side, lat, lon });
+            rows.push({ name: displayName, city, address, side, format, lat, lon });
             if (rows.length >= MAX_POINTS) break;
         }
 
@@ -349,12 +353,12 @@ class XlsxSync {
         const replace = this.db.transaction((items) => {
             this.db.prepare('DELETE FROM locations').run();
             const insert = this.db.prepare(`
-                INSERT INTO locations (name, city, address, side, lat, lon, updated_at)
-                VALUES (?, ?, ?, ?, ?, ?, ?)
+                INSERT INTO locations (name, city, address, side, format, lat, lon, updated_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
             `);
             for (const item of items) {
                 insert.run(
-                    item.name, item.city, item.address, item.side,
+                    item.name, item.city, item.address, item.side, item.format,
                     item.lat, item.lon, updatedAt
                 );
             }

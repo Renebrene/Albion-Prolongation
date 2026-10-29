@@ -188,6 +188,7 @@ class GeoPhotoDB {
                     city: String(location.city || ''),
                     address: String(location.address || ''),
                     side: String(location.side || ''),
+                    format: String(location.format || ''),
                     lat,
                     lon,
                     updatedAt: Number(location.updatedAt || location.updated_at || Date.now())

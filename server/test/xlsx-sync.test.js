@@ -52,7 +52,8 @@ describe('computeRevision', () => {
             { name: 'Другая' },
             { city: 'Батайск' },
             { address: 'ул. Мира, 3' },
-            { side: 'В' }
+            { side: 'В' },
+            { format: 'Экран' }
         ];
 
         for (const change of variants) {

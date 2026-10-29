@@ -455,7 +455,7 @@ function handleLocationsSync(req, res) {
 
     const locations = shouldSend
         ? db.prepare(`
-            SELECT id, name, city, address, side, lat, lon,
+            SELECT id, name, city, address, side, format, lat, lon,
                    updated_at AS updatedAt
             FROM locations
             ORDER BY id

@@ -1082,10 +1082,46 @@ function normalizeKey(value) {
     return String(value || '').normalize('NFC').trim().toLowerCase();
 }
 
-/** Второе поле: «Адрес (сторона)». */
+// Стороны и поверхности — правило из проекта «Сайт» (app/api/sides.py):
+//   «Щит»      — любая подпись уже сторона (A1 и A2 — разные стороны);
+//   «Экран»    — голая «A1» это сторона, «A(1)» — поверхность стороны A;
+//   остальные  — «A(1)», «A1(2)» → «A»/«A1», голая «A1» → «A».
+const SIDE_HOMOGLYPHS = {
+    'А': 'A', 'В': 'B', 'С': 'C', 'Е': 'E', 'Н': 'H', 'К': 'K',
+    'М': 'M', 'О': 'O', 'Р': 'P', 'Т': 'T', 'Х': 'X', 'У': 'Y'
+};
+
+function latinSide(value) {
+    return String(value || '').toUpperCase().trim()
+        .replace(/[АВСЕНКМОРТХУ]/g, (char) => SIDE_HOMOGLYPHS[char] || char);
+}
+
+/** Свернуть подпись поверхности до стороны (A(1), A(2) → A). */
+function parentSide(side, format) {
+    const value = latinSide(side);
+    if (!value) return '';
+
+    const formatName = String(format || '').toLowerCase();
+    if (formatName.includes('щит')) return value;
+    if (/\(\d+\)/.test(value)) return value.replace(/\(\d+\)/g, '').trim();
+    if (/^[A-Z]+\d+$/.test(value)) {
+        return formatName.includes('экран') ? value : value.replace(/\d+$/, '');
+    }
+    return value;
+}
+
+/** Подпись строки списка: «Адрес (сторона)»; поверхности сведены к стороне. */
 function formatAddressSide(location) {
     const address = String((location && location.address) || '').trim();
-    const side = String((location && location.side) || '').trim();
+    const side = parentSide(location && location.side, location && location.format);
+    if (address && side) return `${address} (${side})`;
+    return address || (side ? `(${side})` : '');
+}
+
+/** Точная подпись без свёртки — для адресов, сохранённых раньше. */
+function rawAddressSide(location) {
+    const address = String((location && location.address) || '').trim();
+    const side = latinSide(location && location.side);
     if (address && side) return `${address} (${side})`;
     return address || (side ? `(${side})` : '');
 }
@@ -1120,10 +1156,20 @@ function matchLocation(city, addressSide) {
     const locations = state.locationsCache || [];
     const sameCity = (location) => !cityKey || normalizeKey(location.city) === cityKey;
 
-    // 1. Точное «Адрес (сторона)».
+    // 0. Точное «Адрес (сторона)» с поверхностью — старые сохранённые фото.
     let found = locations.find((location) =>
-        sameCity(location) && normalizeKey(formatAddressSide(location)) === addressKey);
+        sameCity(location) && normalizeKey(rawAddressSide(location)) === addressKey);
     if (found) return found;
+
+    // 1. «Адрес (сторона)»: поверхности A(1)… сведены к стороне A.
+    const collapsed = locations.filter((location) =>
+        sameCity(location) && normalizeKey(formatAddressSide(location)) === addressKey);
+    if (collapsed.length > 0) {
+        // Если есть и голая сторона A, и поверхности A(1)… — берём сторону A.
+        return collapsed.find((location) =>
+            latinSide(location.side) === parentSide(location.side, location.format))
+            || collapsed[0];
+    }
 
     // 2. Адрес без стороны.
     found = locations.find((location) =>

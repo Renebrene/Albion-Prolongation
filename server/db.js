@@ -20,6 +20,7 @@ CREATE TABLE IF NOT EXISTS locations (
     city       TEXT,
     address    TEXT,
     side       TEXT,
+    format     TEXT,
     lat        REAL NOT NULL,
     lon        REAL NOT NULL,
     updated_at INTEGER NOT NULL
@@ -99,6 +100,7 @@ function initDb(dbPath = path.join(__dirname, 'geophoto.db')) {
     ensureColumn(db, 'locations', 'city', 'TEXT');
     ensureColumn(db, 'locations', 'address', 'TEXT');
     ensureColumn(db, 'locations', 'side', 'TEXT');
+    ensureColumn(db, 'locations', 'format', 'TEXT');
 
     return db;
 }

@@ -6,7 +6,7 @@
  */
 class Logger {
     static MAX_LOCAL_LOGS = 500;
-    static APP_VERSION = '1.6.7';
+    static APP_VERSION = '1.7.0';
 
     /**
      * @param {GeoPhotoDB} db

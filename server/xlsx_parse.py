@@ -51,6 +51,7 @@ def _normalize_points(points: list[dict[str, Any]]) -> list[dict[str, Any]]:
             "city": city,
             "address": address,
             "side": side,
+            "format": _text(point.get("format")),
             "lat": latitude,
             "lon": longitude,
         })
