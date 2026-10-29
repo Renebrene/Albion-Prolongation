@@ -808,7 +808,7 @@ computeRevision учитывает name, city, address, side, lat, lon.
 - Скролл перенесён внутрь экрана: .screen height 100dvh + overflow hidden,
   .settings-body и .photo-body имеют свою прокрутку, .screen-footer статичен.
   Шапка остаётся сверху, контент под неё не заезжает.
-- Версия 1.6.6, SW geophoto-static-v22.
+- Версия 1.6.7, SW geophoto-static-v23.
 
 21.4. ФАЙЛЫ
 - index.html: video, shutter, switch, system-camera, error.
@@ -816,7 +816,7 @@ computeRevision учитывает name, city, address, side, lat, lon.
 - app.js: startCameraPreview, stopCameraPreview, switchCamera, captureFromPreview,
   getQuickPosition, saveCapturedPhoto; thumbUrl в галерее и выбранном фото.
 - compression.js: canvasToJpeg, createThumbnail, attachGpsExif, _loadImage.
-- Версия 1.6.6, SW geophoto-static-v22.
+- Версия 1.6.7, SW geophoto-static-v23.
 
 ================================================================================
 20.1. ГЛАВНЫЙ ЭКРАН
@@ -831,19 +831,21 @@ computeRevision учитывает name, city, address, side, lat, lon.
 - Очередь и настройки остались в шапке.
 
 20.2. ОБНОВЛЕНИЕ PWA
-- Service Worker: CACHE_NAME = geophoto-static-v22.
+- Service Worker: CACHE_NAME = geophoto-static-v23.
 - Регистрация: { updateViaCache: 'none' } + registration.update() при загрузке.
 - При активации нового SW (skipWaiting + clients.claim) срабатывает
   controllerchange -> однократный window.location.reload().
-- Настройки -> «О приложении»: версия (Logger.APP_VERSION = 1.6.6) и кнопка
+- Настройки -> «О приложении»: версия (Logger.APP_VERSION = 1.6.7) и кнопка
   «Проверить обновление» (registration.update()).
 - Ручной вариант: полностью закрыть и открыть PWA; на iOS — через Safari.
 - Данные (токен, IndexedDB, очередь) при обновлении не удаляются.
 - PWA-режим (standalone) возможен только на HTTPS или localhost.
   По http://<IP>:3000 Chrome не регистрирует SW, установка недоступна, а
   значок на домашнем экране открывает обычную закладку с адресной строкой.
-  Для диагностики лог «Приложение запущено» пишет origin, secureContext,
-  displayMode и состояние serviceWorker.
+- Для диагностики лог «Приложение запущено» пишет origin, secureContext,
+  displayMode, состояние serviceWorker, viewport/screen/pixelRatio.
+  Если viewport ~980px вместо ширины экрана, включена «Версия для ПК»
+  (Desktop site) — макет рендерится по-десктопному и масштабируется.
 
 ================================================================================
 22. АВТОЗАПУСК СЕРВЕРА (systemd, дополнение от 28.10.2026)

@@ -69,6 +69,11 @@ async function init() {
         origin: window.location.origin,
         secureContext: window.isSecureContext,
         displayMode: displayStandalone ? 'standalone' : 'browser',
+        viewport: `${window.innerWidth}x${window.innerHeight}`,
+        screen: typeof window.screen === 'object'
+            ? `${window.screen.width}x${window.screen.height}`
+            : 'unknown',
+        pixelRatio: window.devicePixelRatio,
         serviceWorker: !('serviceWorker' in navigator)
             ? 'unsupported'
             : (navigator.serviceWorker.controller ? 'controlled' : 'not-controlled')
