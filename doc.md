@@ -639,6 +639,8 @@ Node вызывает Python через child_process.spawn (PYTHON_BIN, по у
 «Наименование» -> «Город, Адрес» -> «Адрес» -> «Город».
 Форматы координат: "47.23,39.82", "47,23 39,82", отдельные колонки.
 Форматы файлов: .xlsx/.xlsm (stdlib), .xls (xlrd или LibreOffice), .ods.
+Вывод Python-парсера читается через StringDecoder: многобайтные UTF-8
+символы на границе 64-КБ чанков не ломаются в U+FFFD.
 
 18.3. СЦЕНАРИЙ СИНХРОНИЗАЦИИ
 Запуск: при старте сервера (force), по кнопке «Синхронизировать» в PWA
@@ -815,7 +817,7 @@ computeRevision учитывает name, city, address, side, lat, lon.
 - Скролл перенесён внутрь экрана: .screen height 100dvh + overflow hidden,
   .settings-body и .photo-body имеют свою прокрутку, .screen-footer статичен.
   Шапка остаётся сверху, контент под неё не заезжает.
-- Версия 1.7.0, SW geophoto-static-v24.
+- Версия 1.7.1, SW geophoto-static-v25.
 
 21.4. ФАЙЛЫ
 - index.html: video, shutter, switch, system-camera, error.
@@ -823,7 +825,7 @@ computeRevision учитывает name, city, address, side, lat, lon.
 - app.js: startCameraPreview, stopCameraPreview, switchCamera, captureFromPreview,
   getQuickPosition, saveCapturedPhoto; thumbUrl в галерее и выбранном фото.
 - compression.js: canvasToJpeg, createThumbnail, attachGpsExif, _loadImage.
-- Версия 1.7.0, SW geophoto-static-v24.
+- Версия 1.7.1, SW geophoto-static-v25.
 
 ================================================================================
 20.1. ГЛАВНЫЙ ЭКРАН
@@ -838,11 +840,11 @@ computeRevision учитывает name, city, address, side, lat, lon.
 - Очередь и настройки остались в шапке.
 
 20.2. ОБНОВЛЕНИЕ PWA
-- Service Worker: CACHE_NAME = geophoto-static-v24.
+- Service Worker: CACHE_NAME = geophoto-static-v25.
 - Регистрация: { updateViaCache: 'none' } + registration.update() при загрузке.
 - При активации нового SW (skipWaiting + clients.claim) срабатывает
   controllerchange -> однократный window.location.reload().
-- Настройки -> «О приложении»: версия (Logger.APP_VERSION = 1.7.0) и кнопка
+- Настройки -> «О приложении»: версия (Logger.APP_VERSION = 1.7.1) и кнопка
   «Проверить обновление» (registration.update()).
 - Ручной вариант: полностью закрыть и открыть PWA; на iOS — через Safari.
 - Данные (токен, IndexedDB, очередь) при обновлении не удаляются.

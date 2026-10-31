@@ -1,7 +1,8 @@
 'use strict';
 
 const { describe, it, expect } = require('bun:test');
-const { pickSpreadsheet, computeRevision } = require('../xlsx-sync');
+const { PassThrough } = require('node:stream');
+const { pickSpreadsheet, computeRevision, readUtf8 } = require('../xlsx-sync');
 
 describe('pickSpreadsheet', () => {
     const files = [
@@ -32,6 +33,24 @@ describe('pickSpreadsheet', () => {
     it('возвращает null для пустого списка', () => {
         expect(pickSpreadsheet([])).toBeNull();
         expect(pickSpreadsheet(null)).toBeNull();
+    });
+});
+
+describe('readUtf8', () => {
+    it('не ломает многобайтные символы на границе чанков', async () => {
+        const stream = new PassThrough();
+        let text = '';
+        readUtf8(stream, (part) => { text += part; });
+
+        const bytes = Buffer.from('Ростов-на-Дону', 'utf8');
+        // Разрезаем двухбайтную «т» ровно пополам — как на границе 64 КБ.
+        const cut = bytes.indexOf(Buffer.from('т', 'utf8')) + 1;
+        stream.write(bytes.subarray(0, cut));
+        stream.write(bytes.subarray(cut));
+        stream.end();
+
+        await new Promise((resolve) => stream.on('end', resolve));
+        expect(text).toBe('Ростов-на-Дону');
     });
 });
 

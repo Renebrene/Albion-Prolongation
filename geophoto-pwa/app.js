@@ -1212,6 +1212,12 @@ function setupCityStepper(photo) {
     if (!city && state.cityValues.some((value) => normalizeKey(value) === normalizeKey(DEFAULT_CITY))) {
         city = DEFAULT_CITY;
     }
+    // Сохранённый город мог остаться от повреждённой/устаревшей записи.
+    // Если его нет в базе, пробуем восстановить по адресу фото.
+    if (city && !state.cityValues.some((value) => normalizeKey(value) === normalizeKey(city))) {
+        const match = matchLocation('', String((photo && photo.address) || ''));
+        if (match && match.city) city = match.city;
+    }
     if (city && !state.cityValues.some((value) => normalizeKey(value) === normalizeKey(city))) {
         state.cityValues.unshift(city);
     }

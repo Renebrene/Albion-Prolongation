@@ -16,6 +16,7 @@ const crypto = require('crypto');
 const fs = require('fs');
 const path = require('path');
 const { spawn } = require('child_process');
+const { StringDecoder } = require('string_decoder');
 
 const SPREADSHEET_RE = /\.(xlsx|xlsm|xls|ods)$/i;
 const MAX_POINTS = 20000;
@@ -76,6 +77,17 @@ function computeRevision(points) {
         .slice(0, 32);
 }
 
+/**
+ * Читает UTF-8 из потока, не ломая многобайтные символы на границах чанков.
+ * Без StringDecoder `chunk.toString('utf8')` превращает половину символа
+ * (например, «т» в «Ростове») в два U+FFFD.
+ */
+function readUtf8(stream, onText) {
+    const decoder = new StringDecoder('utf8');
+    stream.on('data', (chunk) => onText(decoder.write(chunk)));
+    stream.on('end', () => onText(decoder.end()));
+}
+
 /** Запускает Python-парсер Локатора и возвращает точки. */
 function parseWorkbook(filePath) {
     return new Promise((resolve, reject) => {
@@ -99,8 +111,8 @@ function parseWorkbook(filePath) {
         }, PARSE_TIMEOUT_MS);
         if (typeof timer.unref === 'function') timer.unref();
 
-        child.stdout.on('data', (chunk) => { stdout += chunk.toString('utf8'); });
-        child.stderr.on('data', (chunk) => { stderr += chunk.toString('utf8'); });
+        readUtf8(child.stdout, (text) => { stdout += text; });
+        readUtf8(child.stderr, (text) => { stderr += text; });
 
         child.on('error', (err) => {
             if (settled) return;
@@ -373,5 +385,6 @@ module.exports = {
     XlsxSyncError,
     pickSpreadsheet,
     computeRevision,
-    parseWorkbook
+    parseWorkbook,
+    readUtf8
 };
