@@ -751,9 +751,21 @@ side/name/display_name. vendor/xls_import.py:
 Поиск локации локальный: точное «адрес (сторона)» -> адрес без стороны ->
 наименование. Всё работает офлайн.
 Кнопка «Отправить» перенесена в шапку окна фото (pill .send-btn рядом с
-удалением), нижний футер убран. Показывает «Отправлено» или «В очереди» и
-закрывает окно присвоения имени (возврат на главный экран). Без сети фото
-ставится в очередь.
+крестиком закрытия), нижний футер убран. Показывает «Отправлено» или «В
+очереди» и закрывает окно присвоения имени (возврат на главный экран). Без
+сети фото ставится в очередь.
+
+ИСПРАВЛЕНИЕ ОТПРАВЛЕННОГО ФОТО (v1.8.0)
+- Тап по снимку со статусом «sent» в галерее: кнопка в шапке главного экрана
+  меняется на «Исправить» (иконка ✎).
+- «Исправить» открывает окно фото; кнопка в шапке окна становится
+  «Отправить заново» (⟳).
+- При повторной отправке создаётся новая локальная запись с новым id
+  (photo_<timestamp>_fix) и базовым именем из «Наименования»; сервер
+  присваивает новое имя с итерацией. Старая локальная запись удаляется,
+  ранее загруженный файл в хранилище остаётся.
+- Закрытие окна — крестик ✕ в правом верхнем углу (btn-photo-close);
+  кнопка удаления и функция deleteCurrentPhoto удалены.
 
 19.4. ИМЯ ПРИ ОТПРАВКЕ
 /api/upload принимает name, city, address.
@@ -817,7 +829,7 @@ computeRevision учитывает name, city, address, side, lat, lon.
 - Скролл перенесён внутрь экрана: .screen height 100dvh + overflow hidden,
   .settings-body и .photo-body имеют свою прокрутку, .screen-footer статичен.
   Шапка остаётся сверху, контент под неё не заезжает.
-- Версия 1.7.1, SW geophoto-static-v25.
+- Версия 1.8.0, SW geophoto-static-v26.
 
 21.4. ФАЙЛЫ
 - index.html: video, shutter, switch, system-camera, error.
@@ -825,7 +837,7 @@ computeRevision учитывает name, city, address, side, lat, lon.
 - app.js: startCameraPreview, stopCameraPreview, switchCamera, captureFromPreview,
   getQuickPosition, saveCapturedPhoto; thumbUrl в галерее и выбранном фото.
 - compression.js: canvasToJpeg, createThumbnail, attachGpsExif, _loadImage.
-- Версия 1.7.1, SW geophoto-static-v25.
+- Версия 1.8.0, SW geophoto-static-v26.
 
 ================================================================================
 20.1. ГЛАВНЫЙ ЭКРАН
@@ -840,11 +852,11 @@ computeRevision учитывает name, city, address, side, lat, lon.
 - Очередь и настройки остались в шапке.
 
 20.2. ОБНОВЛЕНИЕ PWA
-- Service Worker: CACHE_NAME = geophoto-static-v25.
+- Service Worker: CACHE_NAME = geophoto-static-v26.
 - Регистрация: { updateViaCache: 'none' } + registration.update() при загрузке.
 - При активации нового SW (skipWaiting + clients.claim) срабатывает
   controllerchange -> однократный window.location.reload().
-- Настройки -> «О приложении»: версия (Logger.APP_VERSION = 1.7.1) и кнопка
+- Настройки -> «О приложении»: версия (Logger.APP_VERSION = 1.8.0) и кнопка
   «Проверить обновление» (registration.update()).
 - Ручной вариант: полностью закрыть и открыть PWA; на iOS — через Safari.
 - Данные (токен, IndexedDB, очередь) при обновлении не удаляются.

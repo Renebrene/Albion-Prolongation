@@ -21,8 +21,8 @@
             <h1>Пролонгация</h1>
             <div class="header-actions">
                 <button id="btn-send-selected" class="send-btn" type="button" title="Отправить выбранное фото" aria-label="Отправить выбранное фото">
-                    <span aria-hidden="true">➤</span>
-                    <span>Отправить</span>
+                    <span id="btn-send-selected-icon" aria-hidden="true">➤</span>
+                    <span id="btn-send-selected-label">Отправить</span>
                 </button>
                 <span id="queue-badge" class="badge hidden" title="Фото в очереди">0</span>
                 <button id="btn-settings" class="icon-btn" title="Настройки" aria-label="Настройки">⚙</button>
@@ -82,10 +82,10 @@
             <div class="header-actions">
                 <button id="btn-photo-send" class="send-btn" type="button"
                         title="Отправить фото" aria-label="Отправить фото">
-                    <span aria-hidden="true">➤</span>
-                    <span>Отправить</span>
+                    <span id="btn-photo-send-icon" aria-hidden="true">➤</span>
+                    <span id="btn-photo-send-label">Отправить</span>
                 </button>
-                <button id="btn-photo-delete" class="icon-btn danger" title="Удалить фото" aria-label="Удалить фото">🗑</button>
+                <button id="btn-photo-close" class="icon-btn" title="Закрыть" aria-label="Закрыть">✕</button>
             </div>
         </header>
 

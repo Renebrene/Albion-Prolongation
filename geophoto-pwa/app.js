@@ -102,16 +102,17 @@ async function init() {
 
 function cacheElements() {
     const ids = [
-        'screen-main', 'btn-send-selected', 'queue-badge', 'btn-settings',
+        'screen-main', 'btn-send-selected', 'btn-send-selected-icon', 'btn-send-selected-label',
+        'queue-badge', 'btn-settings',
         'selected-block', 'selected-img', 'selected-name', 'selected-status', 'btn-clear-selection',
         'camera-area', 'camera-input', 'camera-idle', 'camera-video', 'camera-controls',
         'camera-switch', 'camera-system', 'camera-shutter', 'camera-error',
         'camera-gallery', 'camera-gallery-preview', 'gallery-input',
         'btn-gallery-toggle', 'gallery-section',
         'gallery-wrap', 'gallery', 'gallery-empty',
-        'screen-photo', 'btn-photo-back', 'btn-photo-delete', 'photo-preview', 'photo-gps',
+        'screen-photo', 'btn-photo-back', 'btn-photo-close', 'photo-preview', 'photo-gps',
         'photo-city', 'photo-address', 'city-prev', 'city-next', 'address-list', 'photo-name',
-        'photo-status', 'photo-level', 'btn-photo-send',
+        'photo-status', 'photo-level', 'btn-photo-send', 'btn-photo-send-icon', 'btn-photo-send-label',
         'screen-settings', 'btn-settings-back', 'server-url', 'token-input', 'device-name',
         'btn-pair', 'btn-unpair', 'pairing-status', 'compression-level', 'compression-info',
         'autosync-enabled', 'last-sync', 'locations-count', 'btn-sync-now',
@@ -169,7 +170,7 @@ function bindEvents() {
 
     // Экран фото
     els.btnPhotoBack.addEventListener('click', closePhotoScreen);
-    els.btnPhotoDelete.addEventListener('click', deleteCurrentPhoto);
+    els.btnPhotoClose.addEventListener('click', closePhotoScreen);
     els.btnPhotoSend.addEventListener('click', sendCurrentPhoto);
     els.cityPrev.addEventListener('click', () => cycleCity(-1));
     els.cityNext.addEventListener('click', () => cycleCity(1));
@@ -324,6 +325,7 @@ function renderSelected() {
     const photo = state.photos.find((item) => item.id === state.selectedId);
     if (!photo) {
         els.selectedBlock.classList.add('hidden');
+        setSendSelectedMode(false);
         return;
     }
 
@@ -331,6 +333,39 @@ function renderSelected() {
     els.selectedImg.src = photo.thumbUrl || photo.dataUrl;
     els.selectedName.textContent = photoLabel(photo);
     applyStatus(els.selectedStatus, photo.status);
+    // Для уже отправленного фото кнопка наверху превращается в «Исправить».
+    setSendSelectedMode(photo.status === 'sent');
+}
+
+function setSendSelectedMode(correction) {
+    if (els.btnSendSelectedLabel) {
+        els.btnSendSelectedLabel.textContent = correction ? 'Исправить' : 'Отправить';
+    }
+    if (els.btnSendSelectedIcon) {
+        els.btnSendSelectedIcon.textContent = correction ? '✎' : '➤';
+    }
+    if (els.btnSendSelected) {
+        const label = correction ? 'Исправить адрес и отправить заново' : 'Отправить выбранное фото';
+        els.btnSendSelected.title = label;
+        els.btnSendSelected.setAttribute('aria-label', label);
+    }
+}
+
+/** Кнопка в шапке окна фото: для отправленного — «Отправить заново». */
+function setPhotoSendMode(correction) {
+    if (els.btnPhotoSendLabel) {
+        els.btnPhotoSendLabel.textContent = correction ? 'Отправить заново' : 'Отправить';
+    }
+    if (els.btnPhotoSendIcon) {
+        els.btnPhotoSendIcon.textContent = correction ? '⟳' : '➤';
+    }
+    if (els.btnPhotoSend) {
+        const label = correction
+            ? 'Отправить исправленное фото с новым именем'
+            : 'Отправить фото';
+        els.btnPhotoSend.title = label;
+        els.btnPhotoSend.setAttribute('aria-label', label);
+    }
 }
 
 function updateQueueBadge() {
@@ -638,6 +673,13 @@ async function sendSelected() {
         return;
     }
 
+    // Уже отправленное фото: «Исправить» открывает окно для смены адреса
+    // и повторной отправки под новым именем.
+    if (photo.status === 'sent') {
+        await openPhotoScreen(photo.id);
+        return;
+    }
+
     if (!photo.address) {
         openPhotoScreen(photo.id);
         showToast('Введите адрес перед отправкой');
@@ -764,7 +806,8 @@ async function openPhotoScreen(photoId) {
 
     setupCityStepper(photo);
     els.photoAddress.value = photo.address || '';
-    els.photoName.textContent = `Наименование: ${photo.name || '—'}`;
+    setPhotoSendMode(photo.status === 'sent');
+    els.photoName.textContent = `Наименование: ${previewNameFor(photo) || '—'}`;
     state.addressQuery = '';
     state.addressActiveIndex = -1;
     renderAddressList();
@@ -775,6 +818,17 @@ async function openPhotoScreen(photoId) {
     if (els.photoStatus) applyStatus(els.photoStatus, photo.status);
 
     showScreen('screen-photo');
+}
+
+/**
+ * Имя, которое получит фото при повторной отправке: для отправленного
+ * показываем «Наименование» по текущему адресу, иначе сохранённое имя.
+ */
+function previewNameFor(photo) {
+    if (!photo) return '';
+    if (photo.status !== 'sent') return photo.name || '';
+    const match = matchLocation(els.photoCity.value.trim(), els.photoAddress.value.trim());
+    return (match && match.name) || photo.name || '';
 }
 
 function updatePhotoStatusView() {
@@ -795,16 +849,18 @@ async function saveCurrentPhotoAddress() {
 
     const city = els.photoCity.value.trim();
     const address = els.photoAddress.value.trim();
+    const isSent = photo.status === 'sent';
 
     // Имя берём из базы — колонка «Наименование» найденной локации.
-    // У уже отправленного фото сохраняем присвоенное имя с итерацией.
+    // У уже отправленного фото сохранённое имя с итерацией не трогаем:
+    // новое имя присвоится только при повторной отправке.
     const match = await findLocationByCityAddress(city, address);
-    const name = match ? match.name : (photo.status === 'sent' ? (photo.name || '') : '');
+    const name = match ? match.name : (isSent ? (photo.name || '') : '');
 
     const changes = {};
     if (city !== (photo.city || '')) changes.city = city;
     if (address !== (photo.address || '')) changes.address = address;
-    if (name !== (photo.name || '')) changes.name = name;
+    if (!isSent && name !== (photo.name || '')) changes.name = name;
     if (Object.keys(changes).length === 0) return photo;
 
     const updated = await state.db.updatePhoto(photo.id, changes);
@@ -814,7 +870,10 @@ async function saveCurrentPhotoAddress() {
         address,
         name
     });
-    if (els.photoName) els.photoName.textContent = `Наименование: ${name || '—'}`;
+    if (els.photoName) {
+        const preview = match ? match.name : (isSent ? photo.name : name);
+        els.photoName.textContent = `Наименование: ${preview || '—'}`;
+    }
     return updated;
 }
 
@@ -833,32 +892,66 @@ async function sendCurrentPhoto() {
     const photo = await flushAddressSave();
     if (!photo) return;
 
-    const uploaded = await uploadOne(photo);
+    const wasSent = photo.status === 'sent';
+    const target = wasSent ? await createCorrectionCopy(photo) : photo;
+    if (!target) return;
+
+    if (wasSent) state.currentPhotoId = target.id;
+
+    const uploaded = await uploadOne(target);
     await refreshGallery();
 
     if (uploaded || (!navigator.onLine && state.pairing.isPaired())) {
         // Отправлено или офлайн-очередь — возвращаемся на главный экран.
-        state.selectedId = photo.id;
+        state.selectedId = target.id;
         state.currentPhotoId = null;
         showScreen('screen-main');
-        await selectPhoto(photo.id);
+        await selectPhoto(target.id);
     }
 }
 
-async function deleteCurrentPhoto() {
-    if (!state.currentPhotoId) return;
-    if (!window.confirm('Удалить это фото?')) return;
+/**
+ * Исправление отправленного фото: создаём новую локальную копию с новым id,
+ * чтобы сервер присвоил новое имя с итерацией. Старая локальная запись
+ * удаляется; ранее загруженный файл в хранилище остаётся.
+ */
+async function createCorrectionCopy(photo) {
+    const city = els.photoCity.value.trim();
+    const address = els.photoAddress.value.trim();
+    if (!address) {
+        showToast('Выберите адрес и сторону');
+        return null;
+    }
 
-    const photoId = state.currentPhotoId;
-    await state.db.deletePhoto(photoId);
-    await state.logger.warn('Фото удалено', { photoId });
+    const match = await findLocationByCityAddress(city, address);
+    const baseName = match ? match.name : '';
+    const newId = `photo_${Date.now()}_fix`;
 
-    if (state.selectedId === photoId) state.selectedId = null;
-    state.currentPhotoId = null;
+    const corrected = Object.assign({}, photo, {
+        id: newId,
+        city,
+        address,
+        name: baseName,
+        status: 'pending',
+        sentAt: null,
+        serverChecksum: null,
+        lastError: null,
+        storageFileId: null,
+        storageUrl: null,
+        correctedFrom: photo.id,
+        timestamp: photo.timestamp || Date.now()
+    });
 
-    await refreshGallery();
-    showScreen('screen-main');
-    showToast('Фото удалено');
+    await state.db.putPhoto(corrected);
+    await state.db.deletePhoto(photo.id);
+    await state.logger.info('Фото исправлено: новая копия для отправки', {
+        from: photo.id,
+        to: newId,
+        city,
+        address,
+        baseName
+    });
+    return corrected;
 }
 
 // -------------------------------------------------------------- настройки
@@ -1384,7 +1477,9 @@ function selectAddress(value) {
 /** Название под фото обновляется сразу при переключении. */
 function updateSelectionUI() {
     const match = matchLocation(els.photoCity.value, els.photoAddress.value);
-    const name = match ? match.name : '';
+    const current = state.photos.find((photo) => photo.id === state.currentPhotoId);
+    const fallback = current && current.status === 'sent' ? (current.name || '') : '';
+    const name = match ? match.name : fallback;
     els.photoName.textContent = `Наименование: ${name || '—'}`;
     scheduleAddressSave();
 }
