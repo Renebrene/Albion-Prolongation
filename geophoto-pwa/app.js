@@ -110,7 +110,7 @@ function cacheElements() {
         'camera-gallery', 'camera-gallery-preview', 'gallery-input',
         'btn-gallery-toggle', 'gallery-section',
         'gallery-wrap', 'gallery', 'gallery-empty',
-        'screen-photo', 'btn-photo-back', 'btn-photo-close', 'photo-preview', 'photo-gps',
+        'screen-photo', 'btn-photo-back', 'photo-preview', 'photo-gps',
         'photo-city', 'photo-address', 'city-prev', 'city-next', 'address-list', 'photo-name',
         'photo-status', 'photo-level', 'btn-photo-send', 'btn-photo-send-icon', 'btn-photo-send-label',
         'screen-settings', 'btn-settings-back', 'server-url', 'token-input', 'device-name',
@@ -170,7 +170,6 @@ function bindEvents() {
 
     // Экран фото
     els.btnPhotoBack.addEventListener('click', closePhotoScreen);
-    els.btnPhotoClose.addEventListener('click', closePhotoScreen);
     els.btnPhotoSend.addEventListener('click', sendCurrentPhoto);
     els.cityPrev.addEventListener('click', () => cycleCity(-1));
     els.cityNext.addEventListener('click', () => cycleCity(1));
